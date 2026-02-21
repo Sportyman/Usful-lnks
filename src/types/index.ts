@@ -36,4 +36,6 @@ export interface UserProfile {
 export interface GlobalSettings {
   affiliateUrl: string;
   affiliateUrlHistory?: { url: string; timestamp: number }[];
+  aiPrompt?: string;
+  aiModel?: string;
 }

@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { linkService } from '../services/linkService';
 import { categoryService } from '../services/categoryService';
 import { settingsService } from '../services/settingsService';
+import { DEFAULT_PROMPT } from '../services/geminiService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -156,7 +157,7 @@ export default function AdminDashboard() {
 
   const totalClicks = links.reduce((acc, link) => acc + link.clicks, 0);
   const topLinks = [...links].sort((a, b) => b.clicks - a.clicks).slice(0, 5);
-  const isSettingsDirty = settings.affiliateUrl !== originalSettings.affiliateUrl;
+  const isSettingsDirty = settings.affiliateUrl !== originalSettings.affiliateUrl || settings.aiPrompt !== originalSettings.aiPrompt || settings.aiModel !== originalSettings.aiModel;
 
   return (
     <div className="min-h-screen bg-bg-soft pb-20">
@@ -393,6 +394,65 @@ export default function AdminDashboard() {
                     </span>
                   )}
                 </Button>
+              </div>
+            </div>
+
+            {/* AI Prompt Settings */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900">{language === 'he' ? 'הגדרות בינה מלאכותית' : 'AI Settings'}</h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' ? 'ערוך את ההנחיות לבינה המלאכותית בעת יצירת תוכן לקישורים.' : 'Edit the AI prompt used for generating link content.'}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Prompt Editor */}
+                  <div className="relative md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'הנחיית בינה מלאכותית' : 'AI Prompt'}
+                    </label>
+                    <textarea
+                      value={settings.aiPrompt || DEFAULT_PROMPT}
+                      onChange={(e) => setSettings({ ...settings, aiPrompt: e.target.value })}
+                      className="w-full p-4 min-h-[120px] bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm font-mono resize-y"
+                      placeholder="Enter AI prompt..."
+                    />
+                    {settings.aiPrompt && settings.aiPrompt !== DEFAULT_PROMPT && (
+                      <button 
+                        onClick={() => setSettings({ ...settings, aiPrompt: DEFAULT_PROMPT })}
+                        className="absolute right-2 top-9 p-1.5 text-ink-400 hover:text-ink-900 hover:bg-gray-200 rounded-lg transition-colors"
+                        title={language === 'he' ? 'שחזר ברירת מחדל' : 'Restore Default'}
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
+                    )}
+                    <p className="text-[10px] text-ink-400 mt-1">
+                      {language === 'he' ? 'השתמש ב-{{url}} כדי לציין היכן הכתובת תוכנס.' : 'Use {{url}} as a placeholder for the link URL.'}
+                    </p>
+                  </div>
+
+                  {/* Model Selector */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'מודל ראשי' : 'Primary Model'}
+                    </label>
+                    <select
+                      value={settings.aiModel || "gemini-3-flash-preview"}
+                      onChange={(e) => setSettings({ ...settings, aiModel: e.target.value })}
+                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm font-mono"
+                    >
+                      <option value="gemini-3-flash-preview">Gemini 3 Flash (Recommended - Fast & Free)</option>
+                      <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Slower, More Capable)</option>
+                    </select>
+                    <p className="text-[10px] text-ink-400 mt-1">
+                      {language === 'he' 
+                        ? 'המערכת תנסה אוטומטית את המודל השני אם הראשון ייכשל.' 
+                        : 'System will automatically try the other model if the primary fails.'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -21,3 +21,7 @@ export const REDIRECT_DELAY_MS = 650; // Between 500-800ms
 export const ADMIN_ROUTE_PATH = '/internal-portal-8472';
 export const ADMIN_CLICK_TRIGGER = 10;
 export const ADMIN_SHORTCUT = { ctrl: true, shift: true, alt: true, key: 'L' }; // Ctrl+Shift+Alt+L
+export const DEFAULT_GEMINI_PROMPT = `Analyze this URL and generate a title and description in both Hebrew and English.
+Also, find a relevant high-quality image URL for this product or website.
+The content should be inviting and suitable for a "digital gifts" discovery website.
+Keep titles short (max 5 words) and descriptions concise (max 15 words).`;

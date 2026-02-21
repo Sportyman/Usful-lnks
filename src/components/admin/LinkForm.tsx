@@ -11,9 +11,10 @@ interface LinkFormProps {
   onSubmit: (data: Omit<Link, 'id' | 'createdAt' | 'clicks'>) => Promise<void>;
   onCancel: () => void;
   isLoading: boolean;
+  customPrompt?: string;
 }
 
-export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoading }: LinkFormProps) {
+export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoading, customPrompt }: LinkFormProps) {
   const { language } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     description_he: initialData?.description_he || '',
     description_en: initialData?.description_en || '',
     targetUrl: initialData?.targetUrl || '',
+    imageUrl: initialData?.imageUrl || '',
     categoryId: initialData?.categoryId || (categories[0]?.id || ''),
     isActive: initialData?.isActive ?? true,
   });
@@ -34,13 +36,15 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
 
     setIsGenerating(true);
     try {
-      const result = await geminiService.generateLinkInfo(formData.targetUrl);
+      const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt);
       setFormData(prev => ({
         ...prev,
-        ...result
+        ...result,
+        imageUrl: result.imageUrl || prev.imageUrl // Keep existing if not found
       }));
     } catch (error) {
-      alert(language === 'he' ? 'נכשלנו בייצור המידע. נסה שוב או מלא ידנית.' : 'Failed to generate info. Try again or fill manually.');
+      console.error(error);
+      alert(language === 'he' ? 'נכשלנו בייצור המידע. וודא שמפתח ה-API מוגדר.' : 'Failed to generate info. Ensure API Key is set.');
     } finally {
       setIsGenerating(false);
     }
@@ -100,6 +104,31 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
           <p className="mt-1.5 text-[10px] text-ink-500 italic">
             {language === 'he' ? 'הקישור החיצוני שאליו המשתמש יופנה. לחץ על המטה הקסם לייצור אוטומטי!' : 'The external link the user will be redirected to. Click the magic wand for auto-generation!'}
           </p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+            {language === 'he' ? 'כתובת תמונה (URL)' : 'Image URL'}
+          </label>
+          <div className="flex gap-4 items-start">
+            <div className="flex-1">
+              <input
+                type="url"
+                value={formData.imageUrl}
+                onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+                placeholder="https://..."
+              />
+              <p className="mt-1.5 text-[10px] text-ink-500 italic">
+                {language === 'he' ? 'כתובת ישירה לתמונה. השאר ריק לשימוש בתמונה אקראית.' : 'Direct URL to an image. Leave empty for random image.'}
+              </p>
+            </div>
+            {formData.imageUrl && (
+              <div className="w-20 h-20 rounded-xl border border-black/5 overflow-hidden bg-gray-50 shrink-0">
+                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

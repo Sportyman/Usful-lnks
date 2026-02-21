@@ -110,10 +110,13 @@ export default function HomePage() {
                 {/* Thumbnail Image */}
                 <div className="w-16 h-16 sm:w-32 sm:h-32 shrink-0 rounded-lg sm:rounded-[1.5rem] overflow-hidden bg-gray-100 relative">
                   <img 
-                    src={`https://picsum.photos/seed/${link.id}/400/400`}
+                    src={link.imageUrl || `https://picsum.photos/seed/${link.id}/400/400`}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     alt={link.title_en}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${link.id}/400/400`;
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                 </div>
