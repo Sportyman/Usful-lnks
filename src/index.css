@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", serif;
+  
+  --color-bg-soft: #F8F7F4;
+  --color-ink-900: #0A0A0A;
+  --color-ink-500: #666666;
+  
+  --color-accent-peach: #FFDBC2;
+  --color-accent-sage: #D4E7D8;
+  --color-accent-lavender: #E6E0F5;
+  --color-accent-sky: #D0E8F2;
+  
+  --animate-mesh: mesh 20s ease-in-out infinite alternate;
+  --animate-tilt: tilt 10s infinite linear;
+
+  @keyframes mesh {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  
+  @keyframes tilt {
+    0%, 50%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(1deg); }
+    75% { transform: rotate(-1deg); }
+  }
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-bg-soft text-ink-900 selection:bg-accent-peach selection:text-ink-900 overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(255, 219, 194, 0.4) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(212, 231, 216, 0.4) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(230, 224, 245, 0.4) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(208, 232, 242, 0.4) 0px, transparent 50%);
+    background-attachment: fixed;
+    background-size: 100% 100%;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/60 backdrop-blur-xl border border-white/40 shadow-sm;
+  }
+  
+  .squircle {
+    border-radius: 24px;
+    @media (min-width: 640px) {
+      border-radius: 32px;
+    }
+  }
+
+  /* Horizontal Scroll Snap Container */
+  .snap-scroll-x {
+    @apply flex overflow-x-auto snap-x snap-mandatory gap-4 px-6 pb-8 -mx-6 sm:gap-6 sm:px-12 sm:-mx-12;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .snap-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .snap-item {
+    @apply snap-center flex-none;
+  }
+}
