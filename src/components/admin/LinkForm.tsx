@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
 import { Wand2, ClipboardPaste } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { cn } from '../../utils/cn';
 
 interface LinkFormProps {
   categories: Category[];
@@ -17,6 +18,7 @@ interface LinkFormProps {
 export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoading, customPrompt }: LinkFormProps) {
   const { language } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [formData, setFormData] = useState({
     title_he: initialData?.title_he || '',
     title_en: initialData?.title_en || '',
@@ -28,6 +30,11 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     isActive: initialData?.isActive ?? true,
   });
 
+  // Reset image error when URL changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [formData.imageUrl]);
+
   const handleMagicGenerate = async () => {
     if (!formData.targetUrl) {
       alert(language === 'he' ? 'אנא הזן כתובת URL תחילה' : 'Please enter a URL first');
@@ -35,6 +42,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     }
 
     setIsGenerating(true);
+    setImageError(false); // Reset error state before generation
     try {
       const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt);
       setFormData(prev => ({
@@ -125,19 +133,27 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             </div>
             {formData.imageUrl && (
               <div className="relative group">
-                <div className="w-32 h-32 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center">
-                  <img 
-                    src={formData.imageUrl} 
-                    alt="Preview" 
-                    className="w-full h-full object-contain" 
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      (e.target as HTMLImageElement).parentElement?.classList.add('bg-red-50', 'border-red-300');
-                    }} 
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-red-500 font-bold hidden group-has-[img[style*='display: none']]:flex">
-                    {language === 'he' ? 'שגיאה בטעינה' : 'Load Error'}
-                  </div>
+                <div className={cn(
+                  "w-32 h-32 rounded-xl border-2 border-dashed overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center transition-colors",
+                  imageError ? "border-red-300 bg-red-50" : "border-slate-300"
+                )}>
+                  {!imageError ? (
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Preview" 
+                      className="w-full h-full object-contain" 
+                      onError={() => setImageError(true)} 
+                    />
+                  ) : (
+                    <div className="text-center p-2">
+                       <span className="text-xs text-red-500 font-bold block mb-1">
+                        {language === 'he' ? 'שגיאה בטעינה' : 'Load Error'}
+                      </span>
+                      <span className="text-[9px] text-red-400 leading-tight block">
+                        {language === 'he' ? 'הקישור אינו תקין' : 'Invalid URL'}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="absolute -bottom-6 left-0 right-0 text-center text-[10px] text-ink-400">
                   {language === 'he' ? 'תצוגה מקדימה' : 'Preview'}

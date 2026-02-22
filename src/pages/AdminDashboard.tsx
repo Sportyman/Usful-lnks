@@ -18,6 +18,7 @@ import { useLanguageStore } from '../store/languageStore';
 import { auth } from '../services/firebase';
 import { Link } from 'react-router-dom';
 import { Modal } from '../components/ui/Modal';
+import { TaskWindow } from '../components/ui/TaskWindow';
 import { CategoryForm } from '../components/admin/CategoryForm';
 import { LinkForm } from '../components/admin/LinkForm';
 import { cn } from '../utils/cn';
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
   // Modal States
   const [categoryModal, setCategoryModal] = useState<{ isOpen: boolean; editing?: Category }>({ isOpen: false });
   const [linkModal, setLinkModal] = useState<{ isOpen: boolean; editing?: LinkType }>({ isOpen: false });
+  const [isLinkModalMinimized, setIsLinkModalMinimized] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; type?: 'category' | 'link'; id?: string }>({ isOpen: false });
 
   const loadData = async () => {
@@ -506,19 +508,32 @@ export default function AdminDashboard() {
         />
       </Modal>
 
-      <Modal 
+      <TaskWindow 
         isOpen={linkModal.isOpen} 
-        onClose={() => setLinkModal({ isOpen: false })}
+        isMinimized={isLinkModalMinimized}
+        onMinimize={() => setIsLinkModalMinimized(true)}
+        onMaximize={() => setIsLinkModalMinimized(false)}
+        onClose={() => {
+          setLinkModal({ isOpen: false });
+          setIsLinkModalMinimized(false);
+        }}
         title={linkModal.editing ? (language === 'he' ? 'עריכת קישור' : 'Edit Link') : (language === 'he' ? 'קישור חדש' : 'New Link')}
       >
         <LinkForm 
           categories={categories}
           initialData={linkModal.editing}
-          onSubmit={handleLinkSubmit}
-          onCancel={() => setLinkModal({ isOpen: false })}
+          onSubmit={async (data) => {
+            await handleLinkSubmit(data);
+            setIsLinkModalMinimized(false);
+          }}
+          onCancel={() => {
+            setLinkModal({ isOpen: false });
+            setIsLinkModalMinimized(false);
+          }}
           isLoading={isActionLoading}
+          customPrompt={settings.aiPrompt}
         />
-      </Modal>
+      </TaskWindow>
 
       <Modal
         isOpen={deleteConfirm.isOpen}
