@@ -22,6 +22,7 @@ export interface Link {
   description_en: string;
   targetUrl: string;
   categoryId: string;
+  imageUrl?: string;
   createdAt: any; // Firestore Timestamp
   isActive: boolean;
   clicks: number;

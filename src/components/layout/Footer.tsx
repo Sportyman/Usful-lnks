@@ -42,7 +42,7 @@ export function Footer() {
   }, [navigate]);
 
   return (
-    <footer className="py-20 border-t border-black/5 mt-20">
+    <footer className="py-8 border-t border-black/5 mt-12 w-full">
       <div className="max-w-screen-2xl mx-auto px-6 text-center space-y-4">
         <p 
           className="text-ink-500 text-[10px] font-bold uppercase tracking-[0.3em] cursor-default select-none opacity-40 hover:opacity-100 transition-opacity"

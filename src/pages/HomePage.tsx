@@ -53,46 +53,48 @@ export default function HomePage() {
   return (
     <div className="space-y-8 sm:space-y-20 px-4 sm:px-12">
       {/* Minimal Header / Filters */}
-      <section className="flex flex-col sm:flex-row items-baseline justify-between gap-4 sm:gap-6 pt-4 sm:pt-8">
+      <section className="flex flex-col items-center gap-6 pt-8 sm:pt-12">
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl sm:text-6xl font-sans font-extrabold tracking-tighter uppercase italic text-ink-900"
+          className="text-3xl sm:text-6xl font-sans font-extrabold tracking-tighter uppercase italic text-ink-900 text-center"
         >
           {language === 'he' ? 'גילוי' : 'DISCOVER'}
         </motion.h1>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={cn(
-              "flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border",
-              selectedCategory === null 
-                ? "bg-ink-900 text-white border-ink-900" 
-                : "bg-transparent text-ink-500 border-ink-900/10 hover:border-ink-900"
-            )}
-          >
-            {language === 'he' ? 'הכל' : 'All'}
-          </button>
-          {categories.map(cat => (
+        <div className="w-full flex justify-center px-4 sm:px-0">
+          <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar max-w-full sm:justify-center">
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => setSelectedCategory(null)}
               className={cn(
-                "flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border",
-                selectedCategory === cat.id 
+                "flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border cursor-pointer",
+                selectedCategory === null 
                   ? "bg-ink-900 text-white border-ink-900" 
                   : "bg-transparent text-ink-500 border-ink-900/10 hover:border-ink-900"
               )}
             >
-              {language === 'he' ? cat.name_he : cat.name_en}
+              {language === 'he' ? 'הכל' : 'All'}
             </button>
-          ))}
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={cn(
+                  "flex-none px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-all border cursor-pointer",
+                  selectedCategory === cat.id 
+                    ? "bg-ink-900 text-white border-ink-900" 
+                    : "bg-transparent text-ink-500 border-ink-900/10 hover:border-ink-900"
+                )}
+              >
+                {language === 'he' ? cat.name_he : cat.name_en}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Vertical List of Wide Cards */}
-      <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 pb-32">
+      <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4 pb-12">
         <AnimatePresence mode="popLayout">
           {filteredLinks.map((link, index) => (
             <motion.div
@@ -103,9 +105,11 @@ export default function HomePage() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
             >
-              <div 
-                onClick={() => navigate(`/redirect/${link.id}?to=${encodeURIComponent(link.targetUrl)}`)}
-                className="group relative bg-white hover:bg-gray-50 rounded-xl sm:rounded-[2rem] p-2 sm:p-4 flex items-center gap-3 sm:gap-6 cursor-pointer border border-black/5 shadow-sm hover:shadow-md transition-all duration-300"
+              <a 
+                href={`/redirect/${link.id}?to=${encodeURIComponent(link.targetUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative block bg-white hover:bg-gray-50 rounded-xl sm:rounded-[2rem] p-2 sm:p-4 flex items-center gap-3 sm:gap-6 cursor-pointer border border-black/5 shadow-sm hover:shadow-md transition-all duration-300 w-full"
               >
                 {/* Thumbnail Image */}
                 <div className="w-16 h-16 sm:w-32 sm:h-32 shrink-0 rounded-lg sm:rounded-[1.5rem] overflow-hidden bg-gray-100 relative">
@@ -144,7 +148,7 @@ export default function HomePage() {
                     <ArrowRight className="w-3.5 h-3.5 sm:w-6 sm:h-6 transform group-hover:translate-x-0.5 transition-transform" />
                   )}
                 </div>
-              </div>
+              </a>
             </motion.div>
           ))}
         </AnimatePresence>

@@ -39,7 +39,7 @@ export function RootLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-bg-soft text-ink-900 font-sans selection:bg-accent-peach selection:text-ink-900">
+    <div className="min-h-screen bg-bg-soft text-ink-900 font-sans selection:bg-accent-peach selection:text-ink-900 flex flex-col">
       {/* Floating Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6 pointer-events-none">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between pointer-events-auto">
@@ -61,17 +61,16 @@ export function RootLayout() {
         </div>
       </header>
       
-      <main className="pt-20 sm:pt-24 pb-32 min-h-screen">
+      <main className="pt-20 sm:pt-24 pb-12 flex-1 w-full max-w-screen-2xl mx-auto">
         <Outlet />
       </main>
 
       {/* Minimal Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
-        <div className="bg-gradient-to-t from-bg-soft via-bg-soft/80 to-transparent h-32 w-full absolute bottom-0" />
-        <div className="relative max-w-screen-2xl mx-auto px-6 pb-6 flex justify-center pointer-events-auto">
+      <div className="w-full">
+        <div className="max-w-screen-2xl mx-auto px-6 pb-6 flex justify-center">
            <Footer />
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
