@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2, ClipboardPaste } from 'lucide-react';
+import { Wand2, ClipboardPaste, X, Plus, Loader2 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { cn } from '../../utils/cn';
 
@@ -18,7 +18,10 @@ interface LinkFormProps {
 export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoading, customPrompt }: LinkFormProps) {
   const { language } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingField, setGeneratingField] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [tagInput, setTagInput] = useState('');
+  
   const [formData, setFormData] = useState({
     title_he: initialData?.title_he || '',
     title_en: initialData?.title_en || '',
@@ -28,6 +31,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     imageUrl: initialData?.imageUrl || '',
     categoryId: initialData?.categoryId || (categories[0]?.id || ''),
     isActive: initialData?.isActive ?? true,
+    tags: initialData?.tags || [],
   });
 
   // Reset image error when URL changes
@@ -35,26 +39,51 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     setImageError(false);
   }, [formData.imageUrl]);
 
-  const handleMagicGenerate = async () => {
+  const handleMagicGenerate = async (specificField?: string) => {
     if (!formData.targetUrl) {
       alert(language === 'he' ? 'אנא הזן כתובת URL תחילה' : 'Please enter a URL first');
       return;
     }
 
-    setIsGenerating(true);
-    setImageError(false); // Reset error state before generation
+    if (specificField) {
+      setGeneratingField(specificField);
+    } else {
+      setIsGenerating(true);
+    }
+
+    if (specificField === 'imageUrl') setImageError(false);
+
     try {
-      const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt);
-      setFormData(prev => ({
-        ...prev,
-        ...result,
-        imageUrl: result.imageUrl || prev.imageUrl // Keep existing if not found
-      }));
+      const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt, specificField);
+      
+      setFormData(prev => {
+        const newData = { ...prev };
+        if (specificField) {
+          // Update only the specific field
+          if (specificField === 'tags' && result.tags) {
+             // Merge tags instead of replacing if desired, or replace. Let's replace for now as it's "regenerate"
+             newData.tags = result.tags;
+          } else {
+             // @ts-ignore
+             newData[specificField] = result[specificField];
+          }
+        } else {
+          // Update all fields
+          return {
+            ...prev,
+            ...result,
+            imageUrl: result.imageUrl || prev.imageUrl,
+            tags: result.tags || prev.tags
+          };
+        }
+        return newData;
+      });
     } catch (error) {
       console.error(error);
       alert(language === 'he' ? 'נכשלנו בייצור המידע. וודא שמפתח ה-API מוגדר.' : 'Failed to generate info. Ensure API Key is set.');
     } finally {
       setIsGenerating(false);
+      setGeneratingField(null);
     }
   };
 
@@ -67,10 +96,46 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     }
   };
 
+  const handleAddTag = () => {
+    if (!tagInput.trim()) return;
+    if (formData.tags.includes(tagInput.trim())) {
+      setTagInput('');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      tags: [...prev.tags, tagInput.trim()]
+    }));
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(formData);
   };
+
+  const FieldGeneratorButton = ({ field }: { field: string }) => (
+    <button
+      type="button"
+      onClick={() => handleMagicGenerate(field)}
+      disabled={!!generatingField || isGenerating}
+      className="p-1.5 text-accent-peach-darker hover:bg-accent-peach/10 rounded-lg transition-colors disabled:opacity-50"
+      title={language === 'he' ? 'צור מחדש שדה זה' : 'Regenerate this field'}
+    >
+      {generatingField === field ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Wand2 className="w-3.5 h-3.5" />
+      )}
+    </button>
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -101,8 +166,8 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             <Button 
               type="button" 
               variant="secondary" 
-              onClick={handleMagicGenerate}
-              isLoading={isGenerating}
+              onClick={() => handleMagicGenerate()}
+              isLoading={isGenerating && !generatingField}
               className="px-4"
               title={language === 'he' ? 'ייצור מידע אוטומטי' : 'Auto-generate info'}
             >
@@ -115,9 +180,12 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'כתובת תמונה (URL)' : 'Image URL'}
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+              {language === 'he' ? 'כתובת תמונה (URL)' : 'Image URL'}
+            </label>
+            <FieldGeneratorButton field="imageUrl" />
+          </div>
           <div className="flex gap-4 items-start">
             <div className="flex-1">
               <input
@@ -165,9 +233,12 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-              {language === 'he' ? 'כותרת בעברית' : 'Title (Hebrew)'}
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+                {language === 'he' ? 'כותרת בעברית' : 'Title (Hebrew)'}
+              </label>
+              <FieldGeneratorButton field="title_he" />
+            </div>
             <input
               type="text"
               required
@@ -175,14 +246,14 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
               onChange={e => setFormData({ ...formData, title_he: e.target.value })}
               className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
             />
-            <p className="mt-1.5 text-[10px] text-ink-500 italic">
-              {language === 'he' ? 'שם המתנה/הכלי כפי שיופיע לגולשים בעברית' : 'The gift/tool title as it will appear to Hebrew users'}
-            </p>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-              {language === 'he' ? 'כותרת באנגלית' : 'Title (English)'}
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+                {language === 'he' ? 'כותרת באנגלית' : 'Title (English)'}
+              </label>
+              <FieldGeneratorButton field="title_en" />
+            </div>
             <input
               type="text"
               required
@@ -190,37 +261,67 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
               onChange={e => setFormData({ ...formData, title_en: e.target.value })}
               className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
             />
-            <p className="mt-1.5 text-[10px] text-ink-500 italic">
-              {language === 'he' ? 'שם המתנה/הכלי כפי שיופיע לגולשים באנגלית' : 'The gift/tool title as it will appear to English users'}
-            </p>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'תיאור בעברית' : 'Description (Hebrew)'}
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+              {language === 'he' ? 'תיאור בעברית' : 'Description (Hebrew)'}
+            </label>
+            <FieldGeneratorButton field="description_he" />
+          </div>
           <textarea
             value={formData.description_he}
             onChange={e => setFormData({ ...formData, description_he: e.target.value })}
             className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all h-24 shadow-sm"
           />
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'תיאור קצר ומזמין של המתנה' : 'A short and inviting description of the gift'}
-          </p>
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'תיאור באנגלית' : 'Description (English)'}
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+              {language === 'he' ? 'תיאור באנגלית' : 'Description (English)'}
+            </label>
+            <FieldGeneratorButton field="description_en" />
+          </div>
           <textarea
             value={formData.description_en}
             onChange={e => setFormData({ ...formData, description_en: e.target.value })}
             className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all h-24 shadow-sm"
           />
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'תיאור קצר ומזמין באנגלית' : 'A short and inviting description in English'}
-          </p>
+        </div>
+
+        {/* Tags Section */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+              {language === 'he' ? 'תגיות' : 'Tags'}
+            </label>
+            <FieldGeneratorButton field="tags" />
+          </div>
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+              className="flex-1 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+              placeholder={language === 'he' ? 'הוסף תגית...' : 'Add tag...'}
+            />
+            <Button type="button" variant="secondary" onClick={handleAddTag} className="px-3">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {formData.tags.map(tag => (
+              <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-ink-700 border border-gray-200">
+                {tag}
+                <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-red-500">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -239,9 +340,6 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
               </option>
             ))}
           </select>
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'בחר את הקטגוריה המתאימה ביותר' : 'Select the most appropriate category'}
-          </p>
         </div>
 
         <div className="flex items-center gap-3">

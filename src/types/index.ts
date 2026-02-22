@@ -23,6 +23,7 @@ export interface Link {
   targetUrl: string;
   categoryId: string;
   imageUrl?: string;
+  tags?: string[];
   createdAt: any; // Firestore Timestamp
   isActive: boolean;
   clicks: number;
