@@ -15,10 +15,10 @@ export function LanguageToggle() {
       variant="ghost"
       size="sm"
       onClick={() => setLanguage(language === 'he' ? 'en' : 'he')}
-      className="flex items-center gap-2"
+      className="flex items-center gap-1.5 px-2 py-1 h-8 text-xs font-bold uppercase tracking-wide"
     >
-      <Globe className="w-4 h-4" />
-      <span>{language === 'he' ? 'English' : 'עברית'}</span>
+      <Globe className="w-3.5 h-3.5" />
+      <span>{language === 'he' ? 'EN' : 'עב'}</span>
     </Button>
   );
 }

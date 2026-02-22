@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguageStore } from '../../store/languageStore';
 import { ADMIN_CLICK_TRIGGER, ADMIN_SHORTCUT } from '../../config/constants';
+import { APP_VERSION } from '../../config/version';
 
 export function Footer() {
   const { language } = useLanguageStore();
@@ -49,8 +50,8 @@ export function Footer() {
           onClick={() => setClickCount(prev => prev + 1)}
         >
           {language === 'he' 
-            ? '© 2026 כל הזכויות שמורות • האוצר' 
-            : '© 2026 ALL RIGHTS RESERVED • THE HUB'}
+            ? `© 2026 כל הזכויות שמורות • DIGITAL.GIFTS • גרסה ${APP_VERSION}` 
+            : `© 2026 ALL RIGHTS RESERVED • DIGITAL.GIFTS • v${APP_VERSION}`}
         </p>
         <div className="flex justify-center gap-4">
           <div className="w-1 h-1 rounded-full bg-accent-peach" />

@@ -31,14 +31,11 @@
 
 @layer base {
   body {
-    @apply antialiased bg-bg-soft text-ink-900 selection:bg-accent-peach selection:text-ink-900 overflow-x-hidden;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(255, 219, 194, 0.4) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(212, 231, 216, 0.4) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(230, 224, 245, 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(208, 232, 242, 0.4) 0px, transparent 50%);
-    background-attachment: fixed;
-    background-size: 100% 100%;
+    @apply antialiased bg-[#F2F2F2] text-ink-900 selection:bg-black selection:text-white overflow-x-hidden;
+    /* Subtle grid pattern */
+    background-image: linear-gradient(#e5e5e5 1px, transparent 1px), linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center top;
   }
 }
 
@@ -54,6 +51,11 @@
     }
   }
 
+  .mask-linear-fade {
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
   /* Horizontal Scroll Snap Container */
   .snap-scroll-x {
     @apply flex overflow-x-auto snap-x snap-mandatory gap-4 px-6 pb-8 -mx-6 sm:gap-6 sm:px-12 sm:-mx-12;
@@ -67,5 +69,14 @@
   
   .snap-item {
     @apply snap-center flex-none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

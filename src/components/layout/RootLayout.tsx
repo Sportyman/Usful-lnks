@@ -49,13 +49,13 @@ export function RootLayout() {
               <div className="w-6 h-6 bg-ink-900 rounded-full flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-white" />
               </div>
-              <span className="font-sans font-bold tracking-tight text-sm uppercase">
-                {language === 'he' ? 'האוצר' : 'The Hub'}
+              <span className="font-sans font-black tracking-tight text-sm uppercase">
+                DIGITAL.GIFTS
               </span>
             </div>
           </Link>
           
-          <div className="bg-white/80 backdrop-blur-md px-2 py-1.5 rounded-full shadow-sm border border-white/50">
+          <div className="bg-white/80 backdrop-blur-md px-1.5 py-1 rounded-full shadow-sm border border-white/50">
             <LanguageToggle />
           </div>
         </div>
