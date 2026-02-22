@@ -6,6 +6,10 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 export const DEFAULT_PROMPT = `Analyze this URL: {{url}}. 
 Generate a concise title (max 6 words) and description (max 20 words) in Hebrew and English. 
 Also, find a relevant high-quality image URL (logo, product image, or main banner) that best represents this link.
+IMPORTANT: 
+1. Do NOT guess image URLs (like '/logo.png'). 
+2. If the page doesn't have a good image, use Google Search to find a high-quality official logo or product image for the service/product.
+3. Return ONLY valid, absolute URLs (starting with http:// or https://).
 The tone should be inviting and suitable for a "digital gifts" discovery website.`;
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
@@ -52,7 +56,7 @@ export const geminiService = {
             title_en: { type: Type.STRING },
             description_he: { type: Type.STRING },
             description_en: { type: Type.STRING },
-            imageUrl: { type: Type.STRING, description: "A direct URL to the main product image, logo, or representative image found on the page." },
+            imageUrl: { type: Type.STRING, description: "A valid, absolute URL to the main product image or logo. Use Google Search if needed." },
           },
           required: ["title_he", "title_en", "description_he", "description_en"],
         },

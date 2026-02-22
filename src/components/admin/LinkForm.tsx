@@ -124,8 +124,24 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
               </p>
             </div>
             {formData.imageUrl && (
-              <div className="w-20 h-20 rounded-xl border border-black/5 overflow-hidden bg-gray-50 shrink-0">
-                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.target as HTMLImageElement).style.display = 'none'} />
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center">
+                  <img 
+                    src={formData.imageUrl} 
+                    alt="Preview" 
+                    className="w-full h-full object-contain" 
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement?.classList.add('bg-red-50', 'border-red-300');
+                    }} 
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center text-xs text-red-500 font-bold hidden group-has-[img[style*='display: none']]:flex">
+                    {language === 'he' ? 'שגיאה בטעינה' : 'Load Error'}
+                  </div>
+                </div>
+                <div className="absolute -bottom-6 left-0 right-0 text-center text-[10px] text-ink-400">
+                  {language === 'he' ? 'תצוגה מקדימה' : 'Preview'}
+                </div>
               </div>
             )}
           </div>
