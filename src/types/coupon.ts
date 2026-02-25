@@ -4,7 +4,9 @@ export interface Coupon {
   discount: string;
   minSpend: string;
   description: string;
-  sourceUrl: string;
-  createdAt: any;
-  expiresAt?: any;
+  month: string;
+  year: string;
+  event: string;
+  date_added: string;
+  expiry_date?: string;
 }

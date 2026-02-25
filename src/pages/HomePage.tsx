@@ -149,16 +149,16 @@ export default function HomePage() {
           <motion.h1 
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="text-5xl sm:text-7xl md:text-9xl font-black tracking-tighter uppercase leading-[0.9] mb-6 break-words"
+            className="text-[13vw] md:text-9xl font-black tracking-tighter uppercase leading-[0.85] mb-6"
           >
             {selectedCategory ? (
-              <span className="text-transparent bg-clip-text bg-gradient-to-b from-black to-gray-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-b from-black to-gray-600 break-words">
                 {language === 'he' ? selectedCategory.name_he : selectedCategory.name_en}
               </span>
             ) : (
-              <>
+              <span className="whitespace-nowrap">
                 DIGITAL<span className="text-[#FF6B6B]">.</span>GIFTS
-              </>
+              </span>
             )}
           </motion.h1>
 

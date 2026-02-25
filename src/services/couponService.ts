@@ -8,7 +8,7 @@ export const fetchCoupons = async (): Promise<Coupon[]> => {
   try {
     const q = query(
       collection(db, COUPONS_COLLECTION),
-      orderBy('createdAt', 'desc'),
+      orderBy('date_added', 'desc'),
       limit(50)
     );
     const querySnapshot = await getDocs(q);
