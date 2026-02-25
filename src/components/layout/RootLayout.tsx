@@ -54,9 +54,18 @@ export function RootLayout() {
               </span>
             </div>
           </Link>
-          
-          <div className="bg-white/80 backdrop-blur-md px-1.5 py-1 rounded-full shadow-sm border border-white/50">
-            <LanguageToggle />
+
+          <div className="flex items-center gap-2">
+            <Link 
+              to="/coupons" 
+              className="bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm border border-white/50 text-xs font-bold uppercase hover:bg-white transition-colors"
+            >
+              {language === 'he' ? 'קופונים' : 'Coupons'}
+            </Link>
+            
+            <div className="bg-white/80 backdrop-blur-md px-1.5 py-1 rounded-full shadow-sm border border-white/50">
+              <LanguageToggle />
+            </div>
           </div>
         </div>
       </header>

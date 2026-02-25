@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage';
 import RedirectPage from './pages/RedirectPage';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
+import CouponsPage from './pages/CouponsPage';
 import { ADMIN_ROUTE_PATH } from './config/constants';
 import { useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'redirect/:linkId', element: <RedirectPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'coupons', element: <CouponsPage /> },
       { path: ADMIN_ROUTE_PATH, element: <AdminDashboard /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]
