@@ -9,4 +9,6 @@ export interface Coupon {
   event: string;
   date_added: string;
   expiry_date?: string;
+  status: 'active' | 'upcoming';
+  start_date?: string;
 }

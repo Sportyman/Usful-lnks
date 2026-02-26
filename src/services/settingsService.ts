@@ -31,8 +31,12 @@ export const settingsService = {
         }
         return defaultSettings;
       }
-    } catch (error) {
-      console.error('Error fetching global settings:', error);
+    } catch (error: any) {
+      if (error.code === 'permission-denied') {
+        console.warn('Global settings fetch failed due to permissions. Using default settings.');
+      } else {
+        console.error('Error fetching global settings:', error);
+      }
       return { affiliateUrl: AFFILIATE_BASE_URL };
     }
   },

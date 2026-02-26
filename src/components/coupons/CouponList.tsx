@@ -1,23 +1,15 @@
-import { useEffect, useState } from 'react';
 import { Coupon } from '../../types/coupon';
-import { fetchCoupons } from '../../services/couponService';
 import { CouponCard } from './CouponCard';
 import { Tag } from 'lucide-react';
 import { useLanguageStore } from '../../store/languageStore';
 
-export function CouponList() {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { language } = useLanguageStore();
+interface CouponListProps {
+  coupons: Coupon[];
+  loading: boolean;
+}
 
-  useEffect(() => {
-    const loadCoupons = async () => {
-      const data = await fetchCoupons();
-      setCoupons(data);
-      setLoading(false);
-    };
-    loadCoupons();
-  }, []);
+export function CouponList({ coupons, loading }: CouponListProps) {
+  const { language } = useLanguageStore();
 
   if (loading) {
     return (
@@ -34,7 +26,7 @@ export function CouponList() {
       <div className="text-center py-12 border-2 border-dashed border-black/20 rounded-xl">
         <Tag className="w-12 h-12 mx-auto text-gray-300 mb-2" />
         <p className="text-gray-500 font-medium">
-          {language === 'he' ? 'לא נמצאו קופונים פעילים.' : 'No active coupons found.'}
+          {language === 'he' ? 'לא נמצאו קופונים.' : 'No coupons found.'}
         </p>
       </div>
     );

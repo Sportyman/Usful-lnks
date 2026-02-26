@@ -1,24 +1,43 @@
 import { CouponList } from '../components/coupons/CouponList';
 import { useLanguageStore } from '../store/languageStore';
 import { motion } from 'motion/react';
-import { Ticket, Calendar } from 'lucide-react';
+import { Ticket, Calendar, Zap, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchCoupons } from '../services/couponService';
 import { Coupon } from '../types/coupon';
+import { cn } from '../utils/cn';
 
 export default function CouponsPage() {
   const { language } = useLanguageStore();
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'upcoming'>('active');
   const [latestCoupon, setLatestCoupon] = useState<Coupon | null>(null);
 
   useEffect(() => {
-    const getLatest = async () => {
-      const coupons = await fetchCoupons();
-      if (coupons.length > 0) {
-        setLatestCoupon(coupons[0]);
+    const loadCoupons = async () => {
+      setLoading(true);
+      const data = await fetchCoupons();
+      setCoupons(data);
+      if (data.length > 0) {
+        setLatestCoupon(data[0]);
       }
+      setLoading(false);
     };
-    getLatest();
+    loadCoupons();
   }, []);
+
+  const filteredCoupons = coupons.filter(coupon => {
+    const isUpcoming = coupon.status === 'upcoming' && coupon.start_date && new Date(coupon.start_date).getTime() > Date.now();
+    
+    if (activeTab === 'active') {
+      // Show active coupons AND upcoming coupons that have already started
+      return !isUpcoming;
+    } else {
+      // Show ONLY upcoming coupons that haven't started yet
+      return isUpcoming;
+    }
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -58,14 +77,43 @@ export default function CouponsPage() {
           </div>
         )}
         
-        <p className="text-lg md:text-xl font-medium text-gray-500 max-w-2xl mx-auto">
+        <p className="text-lg md:text-xl font-medium text-gray-500 max-w-2xl mx-auto mb-8">
           {language === 'he' 
             ? 'הקופונים השווים ביותר מאליאקספרס, מתעדכנים מדי יום. תפסו אותם לפני שייגמרו!'
             : 'The best AliExpress coupons, updated daily. Grab them before they expire!'}
         </p>
+
+        {/* Tabs */}
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-full border-2 border-black font-bold uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+              activeTab === 'active' 
+                ? "bg-[#FFD23F] text-black" 
+                : "bg-white text-gray-500 hover:bg-gray-50"
+            )}
+          >
+            <Zap className={cn("w-4 h-4", activeTab === 'active' ? "fill-black" : "")} />
+            {language === 'he' ? 'קופונים פעילים' : 'Active Coupons'}
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('upcoming')}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-full border-2 border-black font-bold uppercase transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+              activeTab === 'upcoming' 
+                ? "bg-[#4ECDC4] text-black" 
+                : "bg-white text-gray-500 hover:bg-gray-50"
+            )}
+          >
+            <Clock className={cn("w-4 h-4", activeTab === 'upcoming' ? "fill-black" : "")} />
+            {language === 'he' ? 'בקרוב' : 'Coming Soon'}
+          </button>
+        </div>
       </motion.div>
 
-      <CouponList />
+      <CouponList coupons={filteredCoupons} loading={loading} />
     </div>
   );
 }
