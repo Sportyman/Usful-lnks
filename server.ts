@@ -55,7 +55,7 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
     const { modelName, prompt, specificField } = req.body;
     
     let apiKey = process.env.GEMINI_API_KEY;
-    if (process.env.API_KEY && process.env.API_KEY.length > (apiKey?.length || 0)) {
+    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
       apiKey = process.env.API_KEY;
     }
     
@@ -115,7 +115,7 @@ app.post("/api/gemini/generate-category-info", async (req, res) => {
     const { inputName } = req.body;
     
     let apiKey = process.env.GEMINI_API_KEY;
-    if (process.env.API_KEY && process.env.API_KEY.length > (apiKey?.length || 0)) {
+    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
       apiKey = process.env.API_KEY;
     }
     
@@ -151,6 +151,45 @@ app.post("/api/gemini/generate-category-info", async (req, res) => {
   } catch (error: any) {
     console.error("Server Gemini Error:", error);
     res.status(500).json({ error: error.message || "Failed to generate content" });
+  }
+});
+
+app.post("/api/gemini/generate-image", async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+    
+    if (!apiKey || apiKey.length < 30) {
+      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [{ text: prompt }],
+      },
+    });
+
+    let imageUrl = '';
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+        break;
+      }
+    }
+
+    if (!imageUrl) throw new Error("No image generated");
+    
+    res.json({ imageUrl });
+  } catch (error: any) {
+    console.error("Server Gemini Image Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate image" });
   }
 });
 

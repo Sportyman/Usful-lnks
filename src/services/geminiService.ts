@@ -13,18 +13,16 @@ export const geminiService = {
   async generateLinkInfo(url: string, customPrompt?: string, specificField?: string) {
     try {
       const settings = await settingsService.getGlobalSettings();
-      let promptTemplate = customPrompt || settings.aiPrompt || DEFAULT_PROMPT;
       
       // If asking for a specific field, modify the prompt to focus only on that
+      if (specificField === 'imageUrl') {
+        return await this.generateImage(`A high-quality, professional logo or product image for the website: ${url}`);
+      }
+
+      let promptTemplate = customPrompt || settings.aiPrompt || DEFAULT_PROMPT;
+      
       if (specificField) {
-        if (specificField === 'imageUrl') {
-          try {
-            const hostname = new URL(url).hostname;
-            return { imageUrl: `https://icon.horse/icon/${hostname}` };
-          } catch (e) {
-            return { imageUrl: '' };
-          }
-        } else if (specificField === 'tags') {
+        if (specificField === 'tags') {
           promptTemplate = `Analyze this URL: {{url}}. Generate 5 relevant tags (keywords) in Hebrew.`;
         } else if (specificField === 'title_he') {
           promptTemplate = `Analyze this URL: {{url}}. Generate a concise title (max 6 words) in Hebrew.`;
@@ -114,6 +112,28 @@ export const geminiService = {
       return await response.json();
     } catch (error) {
       console.error("Gemini Error:", error);
+      throw error;
+    }
+  },
+
+  async generateImage(prompt: string) {
+    try {
+      const response = await fetch('/api/gemini/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Gemini Image Error:", error);
       throw error;
     }
   }
