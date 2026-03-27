@@ -25,6 +25,8 @@ app.get("/api/diagnostics", (req, res) => {
     isVercel: !!process.env.VERCEL,
     hasGeminiKey: !!process.env.GEMINI_API_KEY,
     geminiKeyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+    hasApiKey: !!process.env.API_KEY,
+    apiKeyLength: process.env.API_KEY ? process.env.API_KEY.length : 0,
     nodeVersion: process.version,
     platform: process.platform,
     memoryUsage: process.memoryUsage(),
@@ -33,9 +35,9 @@ app.get("/api/diagnostics", (req, res) => {
 
 app.get("/api/diagnostics/test-gemini", async (req, res) => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ success: false, error: "GEMINI_API_KEY is not configured on the server." });
+      return res.status(500).json({ success: false, error: "API Key is not configured on the server." });
     }
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
@@ -52,9 +54,13 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
   try {
     const { modelName, prompt, specificField } = req.body;
     
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (process.env.API_KEY && process.env.API_KEY.length > (apiKey?.length || 0)) {
+      apiKey = process.env.API_KEY;
+    }
+    
+    if (!apiKey || apiKey.length < 30) {
+      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -64,7 +70,6 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
       title_en: { type: Type.STRING },
       description_he: { type: Type.STRING },
       description_en: { type: Type.STRING },
-      imageUrl: { type: Type.STRING, description: "A valid, absolute URL to the main product image or logo. Use Google Search if needed." },
       tags: { type: Type.ARRAY, items: { type: Type.STRING } },
     };
     let requiredFields = ["title_he", "title_en", "description_he", "description_en"];
@@ -109,9 +114,13 @@ app.post("/api/gemini/generate-category-info", async (req, res) => {
   try {
     const { inputName } = req.body;
     
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (process.env.API_KEY && process.env.API_KEY.length > (apiKey?.length || 0)) {
+      apiKey = process.env.API_KEY;
+    }
+    
+    if (!apiKey || apiKey.length < 30) {
+      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
     }
 
     const ai = new GoogleGenAI({ apiKey });

@@ -200,7 +200,25 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
               >
                 {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
-              <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
+              {(aiError.includes('429') || aiError.toLowerCase().includes('quota')) ? (
+                <div className="space-y-1 pr-6">
+                  <p className="font-bold text-sm">{language === 'he' ? 'הגעת למגבלת השימוש (Quota) 🛑' : 'Usage Limit Reached (Quota) 🛑'}</p>
+                  <p>{language === 'he' ? 'ניצלת את מכסת הבקשות החינמית של המודל הנוכחי. מה אפשר לעשות?' : 'You have reached the free tier limit for the current model. What can you do?'}</p>
+                  <ul className="list-disc list-inside mt-1 space-y-0.5">
+                    <li>{language === 'he' ? 'להזין את הפרטים ידנית בינתיים.' : 'Fill in the details manually for now.'}</li>
+                    <li>{language === 'he' ? 'לשנות למודל אחר (כמו Flash) בטאב ההגדרות.' : 'Switch to a different model (like Flash) in the Settings tab.'}</li>
+                    <li>{language === 'he' ? 'להמתין קצת (לפעמים המכסה מתחדשת כל דקה/שעה).' : 'Wait a bit (sometimes the quota resets every minute/hour).'}</li>
+                  </ul>
+                  <details className="mt-2 cursor-pointer">
+                    <summary className="text-[10px] opacity-70 hover:opacity-100">{language === 'he' ? 'הצג שגיאה טכנית' : 'Show technical error'}</summary>
+                    <p className="mt-1 text-[10px] opacity-70">{aiError}</p>
+                  </details>
+                </div>
+              ) : (
+                <div className="pr-6">
+                  <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
+                </div>
+              )}
             </div>
           )}
         </div>
