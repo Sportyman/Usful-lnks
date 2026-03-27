@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
-const FALLBACK_MODEL = "gemini-3.1-pro-preview";
+const FALLBACK_MODEL = "gemini-2.5-flash";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -92,7 +92,8 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
           properties: schemaProperties,
           required: requiredFields,
         },
-        tools: [{ urlContext: {} }, { googleSearch: {} }]
+        tools: [{ urlContext: {} }, { googleSearch: {} }],
+        toolConfig: { includeServerSideToolInvocations: true }
       },
     });
 

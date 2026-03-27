@@ -513,12 +513,13 @@ export default function AdminDashboard() {
                       className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm font-mono"
                     >
                       <option value="gemini-3-flash-preview">Gemini 3 Flash (Recommended - Fast & Free)</option>
-                      <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Slower, More Capable)</option>
+                      <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fallback - Stable)</option>
+                      <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Slower, Low Quota)</option>
                     </select>
                     <p className="text-[10px] text-ink-400 mt-1">
                       {language === 'he' 
-                        ? 'המערכת תנסה אוטומטית את המודל השני אם הראשון ייכשל.' 
-                        : 'System will automatically try the other model if the primary fails.'}
+                        ? 'המערכת תנסה אוטומטית מודל גיבוי אם הראשון ייכשל. מומלץ להישאר עם Flash כדי להימנע משגיאות Quota.' 
+                        : 'System will automatically try a fallback model if the primary fails. Recommended to stick with Flash to avoid Quota errors.'}
                     </p>
                   </div>
                 </div>

@@ -11,7 +11,7 @@ IMPORTANT:
 The tone should be inviting and suitable for a "digital gifts" discovery website.`;
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
-const FALLBACK_MODEL = "gemini-3.1-pro-preview";
+const FALLBACK_MODEL = "gemini-2.5-flash";
 
 export const geminiService = {
   async generateLinkInfo(url: string, customPrompt?: string, specificField?: string) {
