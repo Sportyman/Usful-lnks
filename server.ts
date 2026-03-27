@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
@@ -132,15 +131,17 @@ app.post("/api/gemini/generate-category-info", async (req, res) => {
 
 // Vite middleware for development (only run when not deployed on serverless)
 if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
-  createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  }).then((vite) => {
-    app.use(vite.middlewares);
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+  import("vite").then(({ createServer: createViteServer }) => {
+    createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    }).then((vite) => {
+      app.use(vite.middlewares);
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
     });
-  });
+  }).catch(err => console.error("Failed to load vite", err));
 } else if (!process.env.VERCEL) {
   // Production mode but NOT Vercel (e.g., AI Studio deployment)
   const distPath = path.join(process.cwd(), 'dist');

@@ -13,7 +13,7 @@ import { DEFAULT_PROMPT } from '../services/geminiService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import { auth } from '../services/firebase';
 import { Link } from 'react-router-dom';
@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics'>('content');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState<any>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Modal States
   const [categoryModal, setCategoryModal] = useState<{ isOpen: boolean; editing?: Category }>({ isOpen: false });
@@ -62,6 +63,17 @@ export default function AdminDashboard() {
       console.error('Critical error loading admin data:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const copyDiagnostics = async () => {
+    if (!diagnosticData) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(diagnosticData, null, 2));
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy diagnostics', err);
     }
   };
 
@@ -563,14 +575,24 @@ export default function AdminDashboard() {
                 </Button>
                 
                 {diagnosticData && (
-                  <Button 
-                    onClick={downloadDiagnostics} 
-                    variant="secondary"
-                    className="flex-1"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    {language === 'he' ? 'הורד דוח' : 'Download Report'}
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={downloadDiagnostics} 
+                      variant="secondary"
+                      className="flex-1"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {language === 'he' ? 'הורד דוח' : 'Download Report'}
+                    </Button>
+                    <Button 
+                      onClick={copyDiagnostics} 
+                      variant="secondary"
+                      className="flex-1"
+                    >
+                      {isCopied ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Copy className="w-4 h-4 mr-2" />}
+                      {isCopied ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק דוח' : 'Copy Report')}
+                    </Button>
+                  </>
                 )}
               </div>
 
