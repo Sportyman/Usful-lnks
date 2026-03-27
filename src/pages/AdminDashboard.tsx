@@ -661,6 +661,8 @@ export default function AdminDashboard() {
           }}
           isLoading={isActionLoading}
           customPrompt={settings.aiPrompt}
+          settings={settings}
+          setSettings={setSettings}
         />
       </TaskWindow>
 

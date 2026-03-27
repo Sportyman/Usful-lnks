@@ -65,6 +65,8 @@ export const geminiService = {
           }
           return fallbackResult;
         }
+        // Attach model name to error for better reporting
+        primaryError.modelName = selectedModel;
         throw primaryError;
       }
     } catch (error) {

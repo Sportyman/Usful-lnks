@@ -13,9 +13,11 @@ interface LinkFormProps {
   onCancel: () => void;
   isLoading: boolean;
   customPrompt?: string;
+  settings?: any;
+  setSettings?: (settings: any) => void;
 }
 
-export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoading, customPrompt }: LinkFormProps) {
+export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoading, customPrompt, settings, setSettings }: LinkFormProps) {
   const { language } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingField, setGeneratingField] = useState<string | null>(null);
@@ -23,6 +25,8 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
   const [tagInput, setTagInput] = useState('');
   const [aiError, setAiError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(settings?.aiModel || "gemini-3-flash-preview");
+  const [quotaExceededModels, setQuotaExceededModels] = useState<string[]>([]);
 
   const copyError = () => {
     if (aiError) {
@@ -32,6 +36,18 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     }
   };
   
+  const handleModelChange = (newModel: string) => {
+    setSelectedModel(newModel);
+  };
+
+  const saveAndRetry = async (field?: string) => {
+    if (setSettings && settings) {
+      setSettings({ ...settings, aiModel: selectedModel });
+    }
+    setAiError(null);
+    await handleMagicGenerate(field);
+  };
+
   const [formData, setFormData] = useState({
     title_he: initialData?.title_he || '',
     title_en: initialData?.title_en || '',
@@ -94,6 +110,9 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
       console.error("Gemini Error:", error);
       const errorMsg = error?.message || 'Unknown error';
       setAiError(errorMsg);
+      if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('quota')) {
+        setQuotaExceededModels(prev => [...new Set([...prev, selectedModel])]);
+      }
     } finally {
       setIsGenerating(false);
       setGeneratingField(null);
@@ -201,14 +220,32 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
                 {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
               {(aiError.includes('429') || aiError.toLowerCase().includes('quota')) ? (
-                <div className="space-y-1 pr-6">
+                <div className="space-y-2 pr-6">
                   <p className="font-bold text-sm">{language === 'he' ? 'הגעת למגבלת השימוש (Quota) 🛑' : 'Usage Limit Reached (Quota) 🛑'}</p>
-                  <p>{language === 'he' ? 'ניצלת את מכסת הבקשות החינמית של המודל הנוכחי. מה אפשר לעשות?' : 'You have reached the free tier limit for the current model. What can you do?'}</p>
-                  <ul className="list-disc list-inside mt-1 space-y-0.5">
-                    <li>{language === 'he' ? 'להזין את הפרטים ידנית בינתיים.' : 'Fill in the details manually for now.'}</li>
-                    <li>{language === 'he' ? 'לשנות למודל אחר (כמו Flash) בטאב ההגדרות.' : 'Switch to a different model (like Flash) in the Settings tab.'}</li>
-                    <li>{language === 'he' ? 'להמתין קצת (לפעמים המכסה מתחדשת כל דקה/שעה).' : 'Wait a bit (sometimes the quota resets every minute/hour).'}</li>
-                  </ul>
+                  <p className="text-xs">
+                    {language === 'he' 
+                      ? `המודל הנוכחי (${selectedModel}) הגיע למכסה. נסה מודל אחר:` 
+                      : `The current model (${selectedModel}) has reached its quota. Try another model:`}
+                  </p>
+                  <div className="flex gap-2 items-center">
+                    <select
+                      className="text-xs p-1.5 rounded border border-gray-300 bg-white"
+                      value={selectedModel}
+                      onChange={(e) => handleModelChange(e.target.value)}
+                    >
+                      <option value="gemini-3-flash-preview" className={quotaExceededModels.includes('gemini-3-flash-preview') ? 'text-red-500' : ''}>
+                        Gemini 3 Flash {quotaExceededModels.includes('gemini-3-flash-preview') ? '(Quota Exceeded)' : ''}
+                      </option>
+                      <option value="gemini-2.5-flash" className={quotaExceededModels.includes('gemini-2.5-flash') ? 'text-red-500' : ''}>
+                        Gemini 2.5 Flash {quotaExceededModels.includes('gemini-2.5-flash') ? '(Quota Exceeded)' : ''}
+                      </option>
+                      <option value="gemini-3.1-pro-preview" className={quotaExceededModels.includes('gemini-3.1-pro-preview') ? 'text-red-500' : ''}>
+                        Gemini 3.1 Pro {quotaExceededModels.includes('gemini-3.1-pro-preview') ? '(Quota Exceeded)' : ''}
+                      </option>
+                    </select>
+                    <Button size="sm" className="h-7 text-xs" onClick={() => saveAndRetry(generatingField || undefined)}>{language === 'he' ? 'שמור ונסה שוב' : 'Save & Retry'}</Button>
+                    <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => setAiError(null)}>{language === 'he' ? 'ביטול' : 'Cancel'}</Button>
+                  </div>
                   <details className="mt-2 cursor-pointer">
                     <summary className="text-[10px] opacity-70 hover:opacity-100">{language === 'he' ? 'הצג שגיאה טכנית' : 'Show technical error'}</summary>
                     <p className="mt-1 text-[10px] opacity-70">{aiError}</p>
