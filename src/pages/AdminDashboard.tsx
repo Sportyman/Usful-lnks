@@ -83,6 +83,14 @@ export default function AdminDashboard() {
       const response = await fetch('/api/diagnostics');
       const backendData = response.ok ? await response.json() : { error: `Backend returned ${response.status}` };
       
+      let geminiTest = null;
+      try {
+        const geminiRes = await fetch('/api/diagnostics/test-gemini');
+        geminiTest = await geminiRes.json();
+      } catch (e: any) {
+        geminiTest = { error: e.message };
+      }
+
       const frontendData = {
         url: window.location.href,
         userAgent: navigator.userAgent,
@@ -98,7 +106,8 @@ export default function AdminDashboard() {
       setDiagnosticData({
         timestamp: new Date().toISOString(),
         frontend: frontendData,
-        backend: backendData
+        backend: backendData,
+        geminiTest: geminiTest
       });
     } catch (err: any) {
       setDiagnosticData({

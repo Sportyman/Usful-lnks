@@ -21,6 +21,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
   const [generatingField, setGeneratingField] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [aiError, setAiError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title_he: initialData?.title_he || '',
@@ -44,6 +45,8 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
       alert(language === 'he' ? 'אנא הזן כתובת URL תחילה' : 'Please enter a URL first');
       return;
     }
+
+    setAiError(null);
 
     if (specificField) {
       setGeneratingField(specificField);
@@ -81,7 +84,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     } catch (error: any) {
       console.error("Gemini Error:", error);
       const errorMsg = error?.message || 'Unknown error';
-      alert(language === 'he' ? `נכשלנו בייצור המידע. שגיאה: ${errorMsg}` : `Failed to generate info. Error: ${errorMsg}`);
+      setAiError(errorMsg);
     } finally {
       setIsGenerating(false);
       setGeneratingField(null);
@@ -178,6 +181,11 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
           <p className="mt-1.5 text-[10px] text-ink-500 italic">
             {language === 'he' ? 'הקישור החיצוני שאליו המשתמש יופנה. לחץ על המטה הקסם לייצור אוטומטי!' : 'The external link the user will be redirected to. Click the magic wand for auto-generation!'}
           </p>
+          {aiError && (
+            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words">
+              <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
+            </div>
+          )}
         </div>
 
         <div>

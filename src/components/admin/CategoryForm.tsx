@@ -15,6 +15,7 @@ interface CategoryFormProps {
 export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: CategoryFormProps) {
   const { language } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name_he: initialData?.name_he || '',
     name_en: initialData?.name_en || '',
@@ -31,6 +32,7 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     }
 
     setIsGenerating(true);
+    setAiError(null);
     try {
       const result = await geminiService.generateCategoryInfo(inputName);
       setFormData(prev => ({
@@ -40,7 +42,7 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     } catch (error: any) {
       console.error("Gemini Error:", error);
       const errorMsg = error?.message || 'Unknown error';
-      alert(language === 'he' ? `נכשלנו בייצור המידע. שגיאה: ${errorMsg}` : `Failed to generate info. Error: ${errorMsg}`);
+      setAiError(errorMsg);
     } finally {
       setIsGenerating(false);
     }
@@ -80,6 +82,11 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
           <p className="mt-1.5 text-[10px] text-ink-500 italic">
             {language === 'he' ? 'שם הקטגוריה כפי שיופיע לגולשים בעברית. לחץ על המטה לייצור אוטומטי!' : 'The category name as it will appear to Hebrew users. Click the wand for auto-generation!'}
           </p>
+          {aiError && (
+            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words">
+              <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">

@@ -31,6 +31,23 @@ app.get("/api/diagnostics", (req, res) => {
   });
 });
 
+app.get("/api/diagnostics/test-gemini", async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: "GEMINI_API_KEY is not configured on the server." });
+    }
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: PRIMARY_MODEL,
+      contents: "Say 'Hello World'",
+    });
+    res.json({ success: true, text: response.text });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message, stack: error.stack });
+  }
+});
+
 app.post("/api/gemini/generate-link-info", async (req, res) => {
   try {
     const { modelName, prompt, specificField } = req.body;
