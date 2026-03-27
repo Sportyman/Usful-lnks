@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Coupon } from '../../types/coupon';
 import { Copy, Check, Calendar, Clock } from 'lucide-react';
 import { cn } from '../../utils/cn';
@@ -6,6 +6,7 @@ import { useLanguageStore } from '../../store/languageStore';
 
 interface CouponCardProps {
   coupon: Coupon;
+  key?: React.Key;
 }
 
 export function CouponCard({ coupon }: CouponCardProps) {
