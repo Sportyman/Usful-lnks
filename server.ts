@@ -1,0 +1,144 @@
+import express from "express";
+import { createServer as createViteServer } from "vite";
+import path from "path";
+import { GoogleGenAI, Type } from "@google/genai";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const PRIMARY_MODEL = "gemini-3-flash-preview";
+const FALLBACK_MODEL = "gemini-3.1-pro-preview";
+
+const app = express();
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+app.use(express.json());
+
+// API routes FIRST
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.post("/api/gemini/generate-link-info", async (req, res) => {
+  try {
+    const { modelName, prompt, specificField } = req.body;
+    
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    let schemaProperties: any = {
+      title_he: { type: Type.STRING },
+      title_en: { type: Type.STRING },
+      description_he: { type: Type.STRING },
+      description_en: { type: Type.STRING },
+      imageUrl: { type: Type.STRING, description: "A valid, absolute URL to the main product image or logo. Use Google Search if needed." },
+      tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+    };
+    let requiredFields = ["title_he", "title_en", "description_he", "description_en"];
+
+    if (specificField) {
+      if (specificField === 'imageUrl') {
+        schemaProperties = { imageUrl: { type: Type.STRING } };
+        requiredFields = ["imageUrl"];
+      } else if (specificField === 'tags') {
+        schemaProperties = { tags: { type: Type.ARRAY, items: { type: Type.STRING } } };
+        requiredFields = ["tags"];
+      } else {
+        schemaProperties = { [specificField]: { type: Type.STRING } };
+        requiredFields = [specificField];
+      }
+    }
+
+    const response = await ai.models.generateContent({
+      model: modelName || PRIMARY_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: schemaProperties,
+          required: requiredFields,
+        },
+        tools: [{ urlContext: {} }, { googleSearch: {} }]
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    
+    res.json(JSON.parse(text));
+  } catch (error: any) {
+    console.error("Server Gemini Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate content" });
+  }
+});
+
+app.post("/api/gemini/generate-category-info", async (req, res) => {
+  try {
+    const { inputName } = req.body;
+    
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const response = await ai.models.generateContent({
+      model: PRIMARY_MODEL,
+      contents: `Generate category information based on this name: "${inputName}". 
+      Provide a name in Hebrew, a name in English, and a URL-friendly slug in English.
+      The slug should be lowercase with hyphens instead of spaces.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name_he: { type: Type.STRING },
+            name_en: { type: Type.STRING },
+            slug: { type: Type.STRING },
+          },
+          required: ["name_he", "name_en", "slug"],
+        },
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    
+    res.json(JSON.parse(text));
+  } catch (error: any) {
+    console.error("Server Gemini Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate content" });
+  }
+});
+
+// Vite middleware for development (only run when not deployed on serverless)
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+  createViteServer({
+    server: { middlewareMode: true },
+    appType: "spa",
+  }).then((vite) => {
+    app.use(vite.middlewares);
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  });
+} else if (!process.env.VERCEL) {
+  // Production mode but NOT Vercel (e.g., AI Studio deployment)
+  const distPath = path.join(process.cwd(), 'dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Export the app for Vercel
+export default app;

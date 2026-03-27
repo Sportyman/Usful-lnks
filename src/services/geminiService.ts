@@ -1,7 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { settingsService } from "./settingsService";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export const DEFAULT_PROMPT = `Analyze this URL: {{url}}. 
 Generate a concise title (max 6 words) and description (max 20 words) in Hebrew and English. 
@@ -61,75 +58,42 @@ export const geminiService = {
   },
 
   async callGemini(modelName: string, prompt: string, specificField?: string) {
-    // Define schema based on what we are asking for
-    let schemaProperties: any = {
-      title_he: { type: Type.STRING },
-      title_en: { type: Type.STRING },
-      description_he: { type: Type.STRING },
-      description_en: { type: Type.STRING },
-      imageUrl: { type: Type.STRING, description: "A valid, absolute URL to the main product image or logo. Use Google Search if needed." },
-      tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-    };
-    let requiredFields = ["title_he", "title_en", "description_he", "description_en"];
-
-    if (specificField) {
-      if (specificField === 'imageUrl') {
-        schemaProperties = { imageUrl: { type: Type.STRING } };
-        requiredFields = ["imageUrl"];
-      } else if (specificField === 'tags') {
-        schemaProperties = { tags: { type: Type.ARRAY, items: { type: Type.STRING } } };
-        requiredFields = ["tags"];
-      } else {
-        // For single text fields
-        schemaProperties = { [specificField]: { type: Type.STRING } };
-        requiredFields = [specificField];
-      }
-    }
-
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: schemaProperties,
-          required: requiredFields,
-        },
-        tools: [{ urlContext: {} }, { googleSearch: {} }]
+    const response = await fetch('/api/gemini/generate-link-info', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        modelName,
+        prompt,
+        specificField
+      })
     });
 
-    const text = response.text;
-    if (!text) throw new Error("No response from AI");
-    return JSON.parse(text);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API Error: ${response.status}`);
+    }
+
+    return await response.json();
   },
 
   async generateCategoryInfo(inputName: string) {
-    // Categories are rare operations, just use the primary model (Flash)
     try {
-      const response = await ai.models.generateContent({
-        model: PRIMARY_MODEL,
-        contents: `Generate category information based on this name: "${inputName}". 
-        Provide a name in Hebrew, a name in English, and a URL-friendly slug in English.
-        The slug should be lowercase with hyphens instead of spaces.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              name_he: { type: Type.STRING },
-              name_en: { type: Type.STRING },
-              slug: { type: Type.STRING },
-            },
-            required: ["name_he", "name_en", "slug"],
-          },
+      const response = await fetch('/api/gemini/generate-category-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ inputName })
       });
 
-      const text = response.text;
-      if (!text) throw new Error("No response from AI");
-      return JSON.parse(text);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      return await response.json();
     } catch (error) {
       console.error("Gemini Error:", error);
       throw error;
