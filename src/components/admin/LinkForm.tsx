@@ -78,9 +78,10 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
         }
         return newData;
       });
-    } catch (error) {
-      console.error(error);
-      alert(language === 'he' ? 'נכשלנו בייצור המידע. וודא שמפתח ה-API מוגדר.' : 'Failed to generate info. Ensure API Key is set.');
+    } catch (error: any) {
+      console.error("Gemini Error:", error);
+      const errorMsg = error?.message || 'Unknown error';
+      alert(language === 'he' ? `נכשלנו בייצור המידע. שגיאה: ${errorMsg}` : `Failed to generate info. Error: ${errorMsg}`);
     } finally {
       setIsGenerating(false);
       setGeneratingField(null);

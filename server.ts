@@ -19,6 +19,19 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+app.get("/api/diagnostics", (req, res) => {
+  res.json({
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    isVercel: !!process.env.VERCEL,
+    hasGeminiKey: !!process.env.GEMINI_API_KEY,
+    geminiKeyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+    nodeVersion: process.version,
+    platform: process.platform,
+    memoryUsage: process.memoryUsage(),
+  });
+});
+
 app.post("/api/gemini/generate-link-info", async (req, res) => {
   try {
     const { modelName, prompt, specificField } = req.body;

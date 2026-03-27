@@ -13,7 +13,7 @@ import { DEFAULT_PROMPT } from '../services/geminiService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import { auth } from '../services/firebase';
 import { Link } from 'react-router-dom';
@@ -34,8 +34,9 @@ export default function AdminDashboard() {
   const [originalSettings, setOriginalSettings] = useState<GlobalSettings>({ affiliateUrl: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics'>('content');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [diagnosticData, setDiagnosticData] = useState<any>(null);
 
   // Modal States
   const [categoryModal, setCategoryModal] = useState<{ isOpen: boolean; editing?: Category }>({ isOpen: false });
@@ -62,6 +63,50 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const runDiagnostics = async () => {
+    setIsActionLoading(true);
+    try {
+      const response = await fetch('/api/diagnostics');
+      const backendData = response.ok ? await response.json() : { error: `Backend returned ${response.status}` };
+      
+      const frontendData = {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        localStorageKeys: Object.keys(localStorage),
+        viteEnv: {
+          MODE: import.meta.env.MODE,
+          PROD: import.meta.env.PROD,
+          DEV: import.meta.env.DEV,
+        }
+      };
+
+      setDiagnosticData({
+        timestamp: new Date().toISOString(),
+        frontend: frontendData,
+        backend: backendData
+      });
+    } catch (err: any) {
+      setDiagnosticData({
+        timestamp: new Date().toISOString(),
+        error: err.message || 'Failed to run diagnostics'
+      });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const downloadDiagnostics = () => {
+    if (!diagnosticData) return;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(diagnosticData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `diagnostics-${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
   };
 
   useEffect(() => {
@@ -184,7 +229,8 @@ export default function AdminDashboard() {
           {[
             { id: 'content', label: language === 'he' ? 'תוכן' : 'Content', icon: ExternalLink },
             { id: 'analytics', label: language === 'he' ? 'נתונים' : 'Analytics', icon: BarChart2 },
-            { id: 'settings', label: language === 'he' ? 'הגדרות' : 'Settings', icon: Settings }
+            { id: 'settings', label: language === 'he' ? 'הגדרות' : 'Settings', icon: Settings },
+            { id: 'diagnostics', label: language === 'he' ? 'אבחון' : 'Diagnostics', icon: Activity }
           ].map(tab => (
             <button
               key={tab.id}
@@ -490,6 +536,57 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Diagnostics Tab */}
+        {activeTab === 'diagnostics' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900">{language === 'he' ? 'אבחון מערכת' : 'System Diagnostics'}</h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' 
+                    ? 'הרץ בדיקת מערכת כדי לאתר בעיות בהגדרות, במפתחות ה-API או בחיבור לשרת.' 
+                    : 'Run a system check to find issues with settings, API keys, or server connection.'}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  onClick={runDiagnostics} 
+                  isLoading={isActionLoading}
+                  className="flex-1"
+                >
+                  <Activity className="w-4 h-4 mr-2" />
+                  {language === 'he' ? 'הרץ אבחון' : 'Run Diagnostics'}
+                </Button>
+                
+                {diagnosticData && (
+                  <Button 
+                    onClick={downloadDiagnostics} 
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {language === 'he' ? 'הורד דוח' : 'Download Report'}
+                  </Button>
+                )}
+              </div>
+
+              {diagnosticData && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'תוצאות' : 'Results'}
+                  </h4>
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 overflow-x-auto">
+                    <pre className="text-[10px] font-mono text-ink-700 whitespace-pre-wrap">
+                      {JSON.stringify(diagnosticData, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

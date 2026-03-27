@@ -37,8 +37,10 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
         ...prev,
         ...result
       }));
-    } catch (error) {
-      alert(language === 'he' ? 'נכשלנו בייצור המידע. נסה שוב או מלא ידנית.' : 'Failed to generate info. Try again or fill manually.');
+    } catch (error: any) {
+      console.error("Gemini Error:", error);
+      const errorMsg = error?.message || 'Unknown error';
+      alert(language === 'he' ? `נכשלנו בייצור המידע. שגיאה: ${errorMsg}` : `Failed to generate info. Error: ${errorMsg}`);
     } finally {
       setIsGenerating(false);
     }
