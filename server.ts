@@ -91,9 +91,7 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
           type: Type.OBJECT,
           properties: schemaProperties,
           required: requiredFields,
-        },
-        tools: [{ urlContext: {} }, { googleSearch: {} }],
-        toolConfig: { includeServerSideToolInvocations: true }
+        }
       },
     });
 

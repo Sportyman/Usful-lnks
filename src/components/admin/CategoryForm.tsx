@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2 } from 'lucide-react';
+import { Wand2, Copy, Check } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 
 interface CategoryFormProps {
@@ -16,6 +16,16 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
   const { language } = useLanguageStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const copyError = () => {
+    if (aiError) {
+      navigator.clipboard.writeText(aiError);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
   const [formData, setFormData] = useState({
     name_he: initialData?.name_he || '',
     name_en: initialData?.name_en || '',
@@ -83,7 +93,15 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
             {language === 'he' ? 'שם הקטגוריה כפי שיופיע לגולשים בעברית. לחץ על המטה לייצור אוטומטי!' : 'The category name as it will appear to Hebrew users. Click the wand for auto-generation!'}
           </p>
           {aiError && (
-            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words">
+            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words relative group">
+              <button
+                onClick={copyError}
+                type="button"
+                className="absolute top-2 right-2 p-1.5 bg-white/80 hover:bg-white text-red-700 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                title={language === 'he' ? 'העתק שגיאה' : 'Copy error'}
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
               <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
             </div>
           )}

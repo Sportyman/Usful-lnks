@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2, ClipboardPaste, X, Plus, Loader2 } from 'lucide-react';
+import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { cn } from '../../utils/cn';
 
@@ -22,6 +22,15 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
   const [imageError, setImageError] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [aiError, setAiError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const copyError = () => {
+    if (aiError) {
+      navigator.clipboard.writeText(aiError);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
   
   const [formData, setFormData] = useState({
     title_he: initialData?.title_he || '',
@@ -182,7 +191,15 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             {language === 'he' ? 'הקישור החיצוני שאליו המשתמש יופנה. לחץ על המטה הקסם לייצור אוטומטי!' : 'The external link the user will be redirected to. Click the magic wand for auto-generation!'}
           </p>
           {aiError && (
-            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words">
+            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words relative group">
+              <button
+                onClick={copyError}
+                type="button"
+                className="absolute top-2 right-2 p-1.5 bg-white/80 hover:bg-white text-red-700 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                title={language === 'he' ? 'העתק שגיאה' : 'Copy error'}
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
               <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
             </div>
           )}
