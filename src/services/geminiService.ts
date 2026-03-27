@@ -90,7 +90,9 @@ export const geminiService = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `API Error: ${response.status}`);
+      const error = new Error(errorData.error || `API Error: ${response.status}`);
+      (error as any).modelName = modelName; // Attach model name
+      throw error;
     }
 
     return await response.json();

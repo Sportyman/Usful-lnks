@@ -111,7 +111,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
       const errorMsg = error?.message || 'Unknown error';
       setAiError(errorMsg);
       if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('quota')) {
-        setQuotaExceededModels(prev => [...new Set([...prev, selectedModel])]);
+        setQuotaExceededModels(prev => [...new Set([...prev, error.modelName || selectedModel])]);
       }
     } finally {
       setIsGenerating(false);

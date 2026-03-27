@@ -106,7 +106,10 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
     res.json(JSON.parse(text));
   } catch (error: any) {
     console.error("Server Gemini Error:", error);
-    res.status(500).json({ error: error.message || "Failed to generate content" });
+    res.status(500).json({ 
+      error: error.message || "Failed to generate content",
+      modelName: req.body.modelName 
+    });
   }
 });
 
