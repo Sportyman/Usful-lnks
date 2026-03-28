@@ -172,9 +172,9 @@ const BentoCard = ({
     )}
     
     {isComingSoon && (
-      <div className="absolute top-0 right-0 z-20 overflow-hidden w-24 h-24 pointer-events-none">
-        <div className="absolute top-4 -right-8 bg-red-600 text-white text-[10px] font-black uppercase tracking-tighter py-1 w-32 text-center rotate-45 shadow-lg border-y border-white/20">
-          COMING SOON
+      <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+        <div className="bg-red-600/90 backdrop-blur-sm text-white text-[12px] font-black uppercase tracking-widest py-2 px-6 border-2 border-white shadow-xl -rotate-12">
+          {useLanguageStore.getState().language === 'he' ? 'בקרוב' : 'COMING SOON'}
         </div>
       </div>
     )}

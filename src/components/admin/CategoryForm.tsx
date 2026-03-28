@@ -35,7 +35,7 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     order: initialData?.order || 0,
     isActive: initialData?.isActive ?? true,
     imageFit: initialData?.imageFit || 'cover',
-    imageZoom: initialData?.imageZoom || 1,
+    imageZoom: initialData?.imageZoom && initialData.imageZoom < 10 ? initialData.imageZoom * 100 : initialData?.imageZoom || 100,
     textAlign: initialData?.textAlign || 'right',
     isComingSoon: initialData?.isComingSoon || false,
   });
@@ -244,14 +244,14 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
                 {language === 'he' ? 'זום תמונה' : 'Image Zoom'}
               </label>
               <span className="text-[10px] font-mono font-bold text-accent-peach">
-                {Math.round(formData.imageZoom * 100)}%
+                {Math.round(formData.imageZoom)}%
               </span>
             </div>
             <input
               type="range"
-              min="1"
-              max="3"
-              step="0.1"
+              min="100"
+              max="300"
+              step="10"
               value={formData.imageZoom}
               onChange={e => setFormData({ ...formData, imageZoom: parseFloat(e.target.value) })}
               className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-peach"
@@ -310,7 +310,7 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
                 alt="" 
                 style={{ 
                   objectFit: formData.imageFit as any,
-                  transform: `scale(${formData.imageZoom})`
+                  transform: `scale(${formData.imageZoom / 100})`
                 }}
                 className="w-full h-full opacity-90 transition-all duration-300" 
                 referrerPolicy="no-referrer"
@@ -319,11 +319,11 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
             </div>
           )}
 
-          {/* Coming Soon Ribbon */}
+          {/* Coming Soon Label */}
           {formData.isComingSoon && (
-            <div className="absolute top-0 right-0 w-32 h-32 overflow-hidden z-20 pointer-events-none">
-              <div className="absolute top-6 -right-8 w-48 py-1 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest text-center rotate-45 shadow-[0px_4px_10px_rgba(0,0,0,0.3)] border-y border-white/20">
-                {language === 'he' ? 'בקרוב' : 'Coming Soon'}
+            <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+              <div className="bg-red-600/90 backdrop-blur-sm text-white text-[12px] font-black uppercase tracking-widest py-2 px-6 border-2 border-white shadow-xl -rotate-12">
+                {language === 'he' ? 'בקרוב' : 'COMING SOON'}
               </div>
             </div>
           )}
