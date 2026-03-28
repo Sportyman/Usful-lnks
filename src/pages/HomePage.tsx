@@ -141,35 +141,39 @@ const BentoCard = ({
   textAlign?: 'left' | 'center' | 'right',
   isComingSoon?: boolean,
   style?: React.CSSProperties
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    transition={{ duration: 0.4, delay }}
-    whileHover={{ scale: 1.02, rotate: Math.random() * 2 - 1 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={onClick}
-    className={cn(
-      "relative overflow-hidden p-6 cursor-pointer transition-shadow hover:shadow-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
-      className
-    )}
-    style={{ borderRadius: 'var(--global-radius, 24px)', ...style }}
-  >
-    {imageUrl && (
-      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
-        <img 
-          src={imageUrl} 
-          alt="" 
-          style={{ 
-            objectFit: imageFit,
-            transform: `scale(${imageZoom / 100})`,
-          }}
-          className="w-full h-full opacity-90 transition-transform duration-500" 
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-      </div>
-    )}
+}) => {
+  // Handle legacy data where zoom might be 1.0 instead of 100
+  const effectiveZoom = imageZoom < 10 ? imageZoom * 100 : imageZoom;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.4, delay }}
+      whileHover={{ scale: 1.02, rotate: Math.random() * 2 - 1 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={cn(
+        "relative overflow-hidden p-6 cursor-pointer transition-shadow hover:shadow-xl border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]",
+        className
+      )}
+      style={{ borderRadius: 'var(--global-radius, 24px)', ...style }}
+    >
+      {imageUrl && (
+        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+          <img 
+            src={imageUrl} 
+            alt="" 
+            style={{ 
+              objectFit: imageFit,
+              transform: `scale(${effectiveZoom / 100})`,
+            }}
+            className="w-full h-full opacity-90 transition-transform duration-500" 
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        </div>
+      )}
     
     {isComingSoon && (
       <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
@@ -188,7 +192,8 @@ const BentoCard = ({
        {children}
     </div>
   </motion.div>
-);
+  );
+};
 
 export default function HomePage() {
   const language = useLanguageStore(state => state.language);
