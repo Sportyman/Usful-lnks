@@ -16,7 +16,7 @@ export const geminiService = {
       
       // If asking for a specific field, modify the prompt to focus only on that
       if (specificField === 'imageUrl') {
-        return await this.generateImage(`A high-quality, professional logo or product image for the website: ${url}`);
+        return await this.fetchOgImage(url);
       }
 
       let promptTemplate = customPrompt || settings.aiPrompt || DEFAULT_PROMPT;
@@ -120,24 +120,23 @@ export const geminiService = {
     }
   },
 
-  async generateImage(prompt: string) {
+  async fetchOgImage(url: string) {
     try {
-      const response = await fetch('/api/gemini/generate-image', {
+      const response = await fetch('/api/fetch-og-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ url })
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `API Error: ${response.status}`);
+        throw new Error('Failed to fetch OG image');
       }
 
       return await response.json();
     } catch (error) {
-      console.error("Gemini Image Error:", error);
+      console.error("OG Image Error:", error);
       throw error;
     }
   }

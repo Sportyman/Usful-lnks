@@ -329,9 +329,10 @@ export default function AdminDashboard() {
                   <div key={link.id} className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm flex gap-4 group">
                     <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden">
                       <img 
-                        src={`https://picsum.photos/seed/${link.id}/100/100`} 
+                        src={link.imageUrl || `https://picsum.photos/seed/${link.id}/100/100`} 
                         className="w-full h-full object-cover opacity-80"
-                        alt="" 
+                        alt={language === 'he' ? link.title_he : link.title_en}
+                        referrerPolicy="no-referrer"
                       />
                     </div>
                     <div className="flex-1 min-w-0">

@@ -35,17 +35,16 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
       setTimeout(() => setIsCopied(false), 2000);
     }
   };
-  
+
   const handleModelChange = (newModel: string) => {
     setSelectedModel(newModel);
   };
 
-  const saveAndRetry = async (field?: string) => {
+  const saveSettings = () => {
     if (setSettings && settings) {
       setSettings({ ...settings, aiModel: selectedModel });
     }
     setAiError(null);
-    await handleMagicGenerate(field);
   };
 
   const [formData, setFormData] = useState({
@@ -243,7 +242,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
                         Gemini 3.1 Pro {quotaExceededModels.includes('gemini-3.1-pro-preview') ? '(Quota Exceeded)' : ''}
                       </option>
                     </select>
-                    <Button size="sm" className="h-7 text-xs" onClick={() => saveAndRetry(generatingField || undefined)}>{language === 'he' ? 'שמור ונסה שוב' : 'Save & Retry'}</Button>
+                    <Button size="sm" className="h-7 text-xs" onClick={saveSettings}>{language === 'he' ? 'שמור' : 'Save'}</Button>
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => setAiError(null)}>{language === 'he' ? 'ביטול' : 'Cancel'}</Button>
                   </div>
                   <details className="mt-2 cursor-pointer">

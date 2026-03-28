@@ -41,3 +41,12 @@ export interface GlobalSettings {
   aiPrompt?: string;
   aiModel?: string;
 }
+
+declare global {
+  interface Window {
+    aistudio: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
