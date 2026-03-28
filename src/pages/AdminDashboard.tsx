@@ -13,14 +13,16 @@ import { DEFAULT_PROMPT } from '../services/geminiService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
+import { useDebugStore } from '../store/debugStore';
 import { auth } from '../services/firebase';
 import { Link } from 'react-router-dom';
 import { Modal } from '../components/ui/Modal';
 import { TaskWindow } from '../components/ui/TaskWindow';
 import { CategoryForm } from '../components/admin/CategoryForm';
 import { LinkForm } from '../components/admin/LinkForm';
+import { useDataStore } from '../store/dataStore';
 import { cn } from '../utils/cn';
 import { AFFILIATE_BASE_URL } from '../config/constants';
 
@@ -30,8 +32,30 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [links, setLinks] = useState<LinkType[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [settings, setSettings] = useState<GlobalSettings>({ affiliateUrl: '' });
-  const [originalSettings, setOriginalSettings] = useState<GlobalSettings>({ affiliateUrl: '' });
+  const [settings, setSettings] = useState<GlobalSettings>({ 
+    affiliateUrl: '',
+    siteTitle: '',
+    siteDescription_he: '',
+    siteDescription_en: '',
+    primaryColor: '#FFD23F',
+    secondaryColor: '#F27D26',
+    fontFamily: 'Inter',
+    borderRadius: '24px',
+    showHeroMarquee: true,
+    heroMarqueeText: 'DIGITAL.GIFTS COLLECTION 2026'
+  });
+  const [originalSettings, setOriginalSettings] = useState<GlobalSettings>({ 
+    affiliateUrl: '',
+    siteTitle: '',
+    siteDescription_he: '',
+    siteDescription_en: '',
+    primaryColor: '#FFD23F',
+    secondaryColor: '#F27D26',
+    fontFamily: 'Inter',
+    borderRadius: '24px',
+    showHeroMarquee: true,
+    heroMarqueeText: 'DIGITAL.GIFTS COLLECTION 2026'
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics'>('content');
@@ -44,6 +68,8 @@ export default function AdminDashboard() {
   const [linkModal, setLinkModal] = useState<{ isOpen: boolean; editing?: LinkType }>({ isOpen: false });
   const [isLinkModalMinimized, setIsLinkModalMinimized] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; type?: 'category' | 'link'; id?: string }>({ isOpen: false });
+
+  const { showDebugButton, setShowDebugButton } = useDebugStore();
 
   const loadData = async () => {
     try {
@@ -168,7 +194,9 @@ export default function AdminDashboard() {
         await categoryService.createCategory(data);
       }
       setCategoryModal({ isOpen: false });
+      // Refresh both local and global store
       await loadData();
+      useDataStore.getState().fetchData(true);
     } catch (err) {
       console.error(err);
     } finally {
@@ -185,7 +213,9 @@ export default function AdminDashboard() {
         await linkService.createLink(data);
       }
       setLinkModal({ isOpen: false });
+      // Refresh both local and global store
       await loadData();
+      useDataStore.getState().fetchData(true);
     } catch (err) {
       console.error(err);
     } finally {
@@ -418,6 +448,175 @@ export default function AdminDashboard() {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* General Site Info */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900">{language === 'he' ? 'מידע כללי על האתר' : 'General Site Info'}</h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' ? 'הגדר את הכותרת והתיאור של האתר.' : 'Set the site title and description.'}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'כותרת האתר' : 'Site Title'}
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.siteTitle || ''}
+                    onChange={(e) => setSettings({ ...settings, siteTitle: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                    placeholder="DIGITAL.GIFTS"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'תיאור בעברית' : 'Description (Hebrew)'}
+                    </label>
+                    <textarea
+                      value={settings.siteDescription_he || ''}
+                      onChange={(e) => setSettings({ ...settings, siteDescription_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm h-20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'תיאור באנגלית' : 'Description (English)'}
+                    </label>
+                    <textarea
+                      value={settings.siteDescription_en || ''}
+                      onChange={(e) => setSettings({ ...settings, siteDescription_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm h-20"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Design Settings */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900">{language === 'he' ? 'הגדרות עיצוב' : 'Design Settings'}</h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' ? 'שלוט בצבעים ובגופנים של האתר.' : 'Control the site colors and fonts.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'צבע ראשי' : 'Primary Color'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={settings.primaryColor || '#FFD23F'}
+                      onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                      className="w-10 h-10 rounded-lg cursor-pointer border-none"
+                    />
+                    <input
+                      type="text"
+                      value={settings.primaryColor || '#FFD23F'}
+                      onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'צבע משני' : 'Secondary Color'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={settings.secondaryColor || '#F27D26'}
+                      onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                      className="w-10 h-10 rounded-lg cursor-pointer border-none"
+                    />
+                    <input
+                      type="text"
+                      value={settings.secondaryColor || '#F27D26'}
+                      onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'גופן (Font Family)' : 'Font Family'}
+                  </label>
+                  <select
+                    value={settings.fontFamily || 'Inter'}
+                    onChange={(e) => setSettings({ ...settings, fontFamily: e.target.value })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                  >
+                    <option value="Inter">Inter (Modern Sans)</option>
+                    <option value="Space Grotesk">Space Grotesk (Tech)</option>
+                    <option value="Outfit">Outfit (Clean)</option>
+                    <option value="Playfair Display">Playfair Display (Serif)</option>
+                    <option value="JetBrains Mono">JetBrains Mono (Technical)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'רדיוס פינות (Border Radius)' : 'Border Radius'}
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="range"
+                      min="0"
+                      max="48"
+                      value={parseInt(settings.borderRadius || '24')}
+                      onChange={(e) => setSettings({ ...settings, borderRadius: `${e.target.value}px` })}
+                      className="flex-1 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent-peach"
+                    />
+                    <span className="text-xs font-mono w-10 text-center">{settings.borderRadius || '24px'}</span>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                   <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-1">
+                          {language === 'he' ? 'הצג טקסט רץ בראש האתר' : 'Show Hero Marquee'}
+                        </label>
+                        <p className="text-[10px] text-ink-400">
+                          {language === 'he' ? 'הצג את הטקסט הגדול שרץ ברקע של ראש האתר.' : 'Show the large scrolling text in the hero background.'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSettings({ ...settings, showHeroMarquee: !settings.showHeroMarquee })}
+                        className={cn(
+                          "w-12 h-6 rounded-full transition-colors relative",
+                          settings.showHeroMarquee ? "bg-accent-peach" : "bg-gray-300"
+                        )}
+                      >
+                        <div className={cn(
+                          "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                          settings.showHeroMarquee ? "right-1" : "right-7"
+                        )} />
+                      </button>
+                   </div>
+                </div>
+                {settings.showHeroMarquee && (
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'טקסט רץ (Marquee Text)' : 'Marquee Text'}
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.heroMarqueeText || ''}
+                      onChange={(e) => setSettings({ ...settings, heroMarqueeText: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                      placeholder="DIGITAL.GIFTS COLLECTION 2026"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
               <div className="space-y-1">
                 <h3 className="font-bold text-lg text-ink-900">{language === 'he' ? 'קישור שותפים ראשי' : 'Main Affiliate URL'}</h3>
@@ -464,6 +663,35 @@ export default function AdminDashboard() {
                     </span>
                   )}
                 </Button>
+              </div>
+            </div>
+
+            {/* Debug Settings */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h3 className="font-bold text-lg text-ink-900 flex items-center gap-2">
+                    <Terminal className="w-5 h-5" />
+                    {language === 'he' ? 'הגדרות ניפוי שגיאות' : 'Debug Settings'}
+                  </h3>
+                  <p className="text-xs text-ink-500">
+                    {language === 'he' ? 'הצג או הסתר את כפתור הלוגים הצף.' : 'Show or hide the floating debug logs button.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDebugButton(!showDebugButton)}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                    showDebugButton ? "bg-accent-peach" : "bg-gray-200"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      showDebugButton ? (isRTL ? "-translate-x-6" : "translate-x-6") : (isRTL ? "-translate-x-1" : "translate-x-1")
+                    )}
+                  />
+                </button>
               </div>
             </div>
 

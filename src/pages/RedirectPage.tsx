@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useLanguageStore } from '../store/languageStore';
+import { useDebugStore } from '../store/debugStore';
 import { linkService } from '../services/linkService';
 import { settingsService } from '../services/settingsService';
 import { analyticsService } from '../services/analyticsService';
@@ -17,20 +18,25 @@ export default function RedirectPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { language } = useLanguageStore();
+  const { addLog } = useDebugStore();
   const [targetUrl, setTargetUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const url = searchParams.get('to');
     if (!url || !linkId) {
+      addLog('warn', 'RedirectPage: Missing URL or linkId', { url, linkId });
       navigate('/');
       return;
     }
-    setTargetUrl(decodeURIComponent(url));
+    const decodedUrl = decodeURIComponent(url);
+    setTargetUrl(decodedUrl);
+    addLog('info', 'RedirectPage: Starting redirection', { linkId, targetUrl: decodedUrl });
 
     // 1. Fetch Affiliate URL & Trigger
     const triggerAffiliate = async () => {
       try {
         const settings = await settingsService.getGlobalSettings();
+        addLog('debug', 'RedirectPage: Triggering affiliate frame', { affiliateUrl: settings.affiliateUrl });
         const affiliateFrame = document.createElement('iframe');
         affiliateFrame.style.display = 'none';
         affiliateFrame.src = settings.affiliateUrl;
@@ -43,6 +49,7 @@ export default function RedirectPage() {
           }
         }, REDIRECT_DELAY_MS + 2000);
       } catch (err) {
+        addLog('error', 'RedirectPage: Failed to load affiliate settings', { error: err });
         console.error('Failed to load affiliate settings', err);
       }
     };
@@ -55,13 +62,14 @@ export default function RedirectPage() {
 
     // 3. Final Redirect
     const timer = setTimeout(() => {
-      window.location.href = decodeURIComponent(url);
+      addLog('info', 'RedirectPage: Final redirecting now', { url: decodedUrl });
+      window.location.href = decodedUrl;
     }, REDIRECT_DELAY_MS);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [linkId, searchParams, navigate]);
+  }, [linkId, searchParams, navigate, addLog]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">

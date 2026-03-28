@@ -68,11 +68,13 @@ app.post("/api/gemini/generate-link-info", async (req, res) => {
     let schemaProperties: any = {
       title_he: { type: Type.STRING },
       title_en: { type: Type.STRING },
+      subtitle_he: { type: Type.STRING },
+      subtitle_en: { type: Type.STRING },
       description_he: { type: Type.STRING },
       description_en: { type: Type.STRING },
       tags: { type: Type.ARRAY, items: { type: Type.STRING } },
     };
-    let requiredFields = ["title_he", "title_en", "description_he", "description_en"];
+    let requiredFields = ["title_he", "title_en", "subtitle_he", "subtitle_en", "description_he", "description_en"];
 
     if (specificField) {
       if (specificField === 'imageUrl') {

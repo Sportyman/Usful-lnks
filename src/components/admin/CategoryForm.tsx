@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2, Copy, Check } from 'lucide-react';
+import { Wand2, Copy, Check, Sparkles, Search } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { cn } from '../../utils/cn';
 
 interface CategoryFormProps {
   initialData?: Partial<Category>;
@@ -30,8 +31,13 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     name_he: initialData?.name_he || '',
     name_en: initialData?.name_en || '',
     slug: initialData?.slug || '',
+    imageUrl: initialData?.imageUrl || '',
     order: initialData?.order || 0,
     isActive: initialData?.isActive ?? true,
+    imageFit: initialData?.imageFit || 'cover',
+    imageZoom: initialData?.imageZoom || 1,
+    textAlign: initialData?.textAlign || 'right',
+    isComingSoon: initialData?.isComingSoon || false,
   });
 
   const handleMagicGenerate = async () => {
@@ -64,134 +70,289 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'שם בעברית' : 'Name (Hebrew)'}
-          </label>
-          <div className="flex gap-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'שם בעברית' : 'Name (Hebrew)'}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                required
+                value={formData.name_he}
+                onChange={e => setFormData({ ...formData, name_he: e.target.value })}
+                className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+              />
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={handleMagicGenerate}
+                isLoading={isGenerating}
+                className="px-4"
+                title={language === 'he' ? 'ייצור מידע אוטומטי' : 'Auto-generate info'}
+              >
+                <Wand2 className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="mt-1.5 text-[10px] text-ink-500 italic">
+              {language === 'he' ? 'שם הקטגוריה כפי שיופיע לגולשים בעברית. לחץ על המטה לייצור אוטומטי!' : 'The category name as it will appear to Hebrew users. Click the wand for auto-generation!'}
+            </p>
+            {aiError && (
+              <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words relative group">
+                <button
+                  onClick={copyError}
+                  type="button"
+                  className="absolute top-2 right-2 p-1.5 bg-white/80 hover:bg-white text-red-700 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  title={language === 'he' ? 'העתק שגיאה' : 'Copy error'}
+                >
+                  {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+                {(aiError.includes('429') || aiError.toLowerCase().includes('quota')) ? (
+                  <div className="space-y-1 pr-6">
+                    <p className="font-bold text-sm">{language === 'he' ? 'הגעת למגבלת השימוש (Quota) 🛑' : 'Usage Limit Reached (Quota) 🛑'}</p>
+                    <p>{language === 'he' ? 'ניצלת את מכסת הבקשות החינמית של המודל הנוכחי. מה אפשר לעשות?' : 'You have reached the free tier limit for the current model. What can you do?'}</p>
+                    <ul className="list-disc list-inside mt-1 space-y-0.5">
+                      <li>{language === 'he' ? 'להזין את הפרטים ידנית בינתיים.' : 'Fill in the details manually for now.'}</li>
+                      <li>{language === 'he' ? 'לשנות למודל אחר (כמו Flash) בטאב ההגדרות.' : 'Switch to a different model (like Flash) in the Settings tab.'}</li>
+                      <li>{language === 'he' ? 'להמתין קצת (לפעמים המכסה מתחדשת כל דקה/שעה).' : 'Wait a bit (sometimes the quota resets every minute/hour).'}</li>
+                    </ul>
+                    <details className="mt-2 cursor-pointer">
+                      <summary className="text-[10px] opacity-70 hover:opacity-100">{language === 'he' ? 'הצג שגיאה טכנית' : 'Show technical error'}</summary>
+                      <p className="mt-1 text-[10px] opacity-70">{aiError}</p>
+                    </details>
+                  </div>
+                ) : (
+                  <div className="pr-6">
+                    <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'שם באנגלית' : 'Name (English)'}
+            </label>
             <input
               type="text"
               required
-              value={formData.name_he}
-              onChange={e => setFormData({ ...formData, name_he: e.target.value })}
-              className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+              value={formData.name_en}
+              onChange={e => setFormData({ ...formData, name_en: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
             />
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={handleMagicGenerate}
-              isLoading={isGenerating}
-              className="px-4"
-              title={language === 'he' ? 'ייצור מידע אוטומטי' : 'Auto-generate info'}
-            >
-              <Wand2 className="w-4 h-4" />
-            </Button>
           </div>
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'שם הקטגוריה כפי שיופיע לגולשים בעברית. לחץ על המטה לייצור אוטומטי!' : 'The category name as it will appear to Hebrew users. Click the wand for auto-generation!'}
-          </p>
-          {aiError && (
-            <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words relative group">
-              <button
-                onClick={copyError}
-                type="button"
-                className="absolute top-2 right-2 p-1.5 bg-white/80 hover:bg-white text-red-700 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                title={language === 'he' ? 'העתק שגיאה' : 'Copy error'}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              Slug
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.slug}
+              onChange={e => setFormData({ ...formData, slug: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'כתובת תמונה' : 'Image URL'}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.imageUrl}
+                onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
+                className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+                placeholder="https://example.com/image.jpg"
+              />
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={() => {
+                  const query = language === 'he' ? formData.name_he : formData.name_en;
+                  if (query) {
+                    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`, '_blank');
+                  } else {
+                    alert(language === 'he' ? 'אנא הזן שם קטגוריה תחילה' : 'Please enter a category name first');
+                  }
+                }}
+                className="px-4"
+                title={language === 'he' ? 'חפש תמונה בגוגל' : 'Search image on Google'}
               >
-                {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-              {(aiError.includes('429') || aiError.toLowerCase().includes('quota')) ? (
-                <div className="space-y-1 pr-6">
-                  <p className="font-bold text-sm">{language === 'he' ? 'הגעת למגבלת השימוש (Quota) 🛑' : 'Usage Limit Reached (Quota) 🛑'}</p>
-                  <p>{language === 'he' ? 'ניצלת את מכסת הבקשות החינמית של המודל הנוכחי. מה אפשר לעשות?' : 'You have reached the free tier limit for the current model. What can you do?'}</p>
-                  <ul className="list-disc list-inside mt-1 space-y-0.5">
-                    <li>{language === 'he' ? 'להזין את הפרטים ידנית בינתיים.' : 'Fill in the details manually for now.'}</li>
-                    <li>{language === 'he' ? 'לשנות למודל אחר (כמו Flash) בטאב ההגדרות.' : 'Switch to a different model (like Flash) in the Settings tab.'}</li>
-                    <li>{language === 'he' ? 'להמתין קצת (לפעמים המכסה מתחדשת כל דקה/שעה).' : 'Wait a bit (sometimes the quota resets every minute/hour).'}</li>
-                  </ul>
-                  <details className="mt-2 cursor-pointer">
-                    <summary className="text-[10px] opacity-70 hover:opacity-100">{language === 'he' ? 'הצג שגיאה טכנית' : 'Show technical error'}</summary>
-                    <p className="mt-1 text-[10px] opacity-70">{aiError}</p>
-                  </details>
-                </div>
-              ) : (
-                <div className="pr-6">
-                  <span className="font-bold">{language === 'he' ? 'שגיאת מחולל:' : 'Generator Error:'}</span> {aiError}
-                </div>
-              )}
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="mt-1.5 text-[10px] text-ink-500 italic">
+              {language === 'he' ? 'הדבק קישור לתמונה או חפש בגוגל והעתק את כתובת התמונה' : 'Paste an image URL or search on Google and copy the image address'}
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'סדר תצוגה' : 'Display Order'}
+            </label>
+            <input
+              type="number"
+              required
+              value={formData.order}
+              onChange={e => setFormData({ ...formData, order: parseInt(e.target.value) })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                {language === 'he' ? 'התאמת תמונה' : 'Image Fit'}
+              </label>
+              <select
+                value={formData.imageFit}
+                onChange={e => setFormData({ ...formData, imageFit: e.target.value as any })}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach transition-all shadow-sm"
+              >
+                <option value="cover">{language === 'he' ? 'חיתוך (Cover)' : 'Cover'}</option>
+                <option value="contain">{language === 'he' ? 'התאמה (Contain)' : 'Contain'}</option>
+                <option value="fill">{language === 'he' ? 'מתיחה (Fill)' : 'Fill'}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                {language === 'he' ? 'יישור טקסט' : 'Text Align'}
+              </label>
+              <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
+                {(['left', 'center', 'right'] as const).map((align) => (
+                  <button
+                    key={align}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, textAlign: align })}
+                    className={cn(
+                      "flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all",
+                      formData.textAlign === align ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    )}
+                  >
+                    {align}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+                {language === 'he' ? 'זום תמונה' : 'Image Zoom'}
+              </label>
+              <span className="text-[10px] font-mono font-bold text-accent-peach">
+                {Math.round(formData.imageZoom * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="3"
+              step="0.1"
+              value={formData.imageZoom}
+              onChange={e => setFormData({ ...formData, imageZoom: parseFloat(e.target.value) })}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-accent-peach"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-6">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
+                className="w-5 h-5 rounded-lg border-slate-300 text-ink-900 focus:ring-accent-peach"
+              />
+              <label htmlFor="isActive" className="text-sm font-medium text-ink-700">
+                {language === 'he' ? 'פעיל' : 'Active'}
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isComingSoon"
+                checked={formData.isComingSoon}
+                onChange={e => setFormData({ ...formData, isComingSoon: e.target.checked })}
+                className="w-5 h-5 rounded-lg border-slate-300 text-red-600 focus:ring-red-500"
+              />
+              <label htmlFor="isComingSoon" className="text-sm font-bold text-red-600">
+                {language === 'he' ? 'בקרוב' : 'Coming Soon'}
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-4">
+          <Button type="submit" className="flex-1" isLoading={isLoading}>
+            {language === 'he' ? 'שמור' : 'Save'}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
+            {language === 'he' ? 'ביטול' : 'Cancel'}
+          </Button>
+        </div>
+      </form>
+
+      {/* Preview Section */}
+      <div className="space-y-4">
+        <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+          {language === 'he' ? 'תצוגה מקדימה' : 'Preview'}
+        </label>
+        <div className="w-full max-w-sm aspect-[4/3] relative overflow-hidden rounded-3xl p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#FFD23F]">
+          {formData.imageUrl && (
+            <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+              <img 
+                src={formData.imageUrl} 
+                alt="" 
+                style={{ 
+                  objectFit: formData.imageFit as any,
+                  transform: `scale(${formData.imageZoom})`
+                }}
+                className="w-full h-full opacity-90 transition-all duration-300" 
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             </div>
           )}
-        </div>
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'שם באנגלית' : 'Name (English)'}
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.name_en}
-            onChange={e => setFormData({ ...formData, name_en: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
-          />
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'שם הקטגוריה כפי שיופיע לגולשים באנגלית' : 'The category name as it will appear to English users'}
-          </p>
-        </div>
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            Slug
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.slug}
-            onChange={e => setFormData({ ...formData, slug: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
-          />
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'מזהה באנגלית לכתובת ה-URL (למשל: digital-gifts)' : 'URL identifier in English (e.g., digital-gifts)'}
-          </p>
-        </div>
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'סדר תצוגה' : 'Display Order'}
-          </label>
-          <input
-            type="number"
-            required
-            value={formData.order}
-            onChange={e => setFormData({ ...formData, order: parseInt(e.target.value) })}
-            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
-          />
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'מספר הקובע את סדר הופעת הקטגוריות (נמוך מופיע קודם)' : 'Number that determines the category order (lower appears first)'}
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="isActive"
-            checked={formData.isActive}
-            onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-            className="w-5 h-5 rounded-lg border-slate-300 text-ink-900 focus:ring-accent-peach"
-          />
-          <label htmlFor="isActive" className="text-sm font-medium text-ink-700">
-            {language === 'he' ? 'פעיל' : 'Active'}
-          </label>
-        </div>
-      </div>
+          {/* Coming Soon Ribbon */}
+          {formData.isComingSoon && (
+            <div className="absolute top-0 right-0 w-32 h-32 overflow-hidden z-20 pointer-events-none">
+              <div className="absolute top-6 -right-8 w-48 py-1 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest text-center rotate-45 shadow-[0px_4px_10px_rgba(0,0,0,0.3)] border-y border-white/20">
+                {language === 'he' ? 'בקרוב' : 'Coming Soon'}
+              </div>
+            </div>
+          )}
 
-      <div className="flex gap-3 pt-4">
-        <Button type="submit" className="flex-1" isLoading={isLoading}>
-          {language === 'he' ? 'שמור' : 'Save'}
-        </Button>
-        <Button type="button" variant="secondary" onClick={onCancel} className="flex-1">
-          {language === 'he' ? 'ביטול' : 'Cancel'}
-        </Button>
+          <div className={cn(
+            "relative z-10 h-full flex flex-col justify-between text-white drop-shadow-md",
+            formData.textAlign === 'left' ? "text-left" : formData.textAlign === 'center' ? "text-center" : "text-right"
+          )}>
+            <div className={cn("flex items-start", formData.textAlign === 'left' ? "justify-between" : formData.textAlign === 'center' ? "justify-center gap-4" : "justify-between flex-row-reverse")}>
+              <div className="bg-white/90 backdrop-blur-sm border border-black p-1.5 rounded-lg">
+                <Sparkles className="w-3 h-3 text-black" />
+              </div>
+              <div className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                0
+              </div>
+            </div>
+            
+            <div className={cn("flex flex-col", formData.textAlign === 'center' ? "items-center" : formData.textAlign === 'left' ? "items-start" : "items-end")}>
+              <h3 className="text-xl font-black uppercase leading-none mb-1">
+                {language === 'he' ? (formData.name_he || 'שם קטגוריה') : (formData.name_en || 'Category Name')}
+              </h3>
+              <div className="w-8 h-0.5 bg-white rounded-full" />
+            </div>
+          </div>
+        </div>
+        <p className="text-[10px] text-ink-500 italic">
+          {language === 'he' ? 'כך ייראה הבלוק של הקטגוריה בדף הבית' : 'This is how the category block will look on the home page'}
+        </p>
       </div>
-    </form>
+    </div>
   );
 }

@@ -1,9 +1,10 @@
 import { settingsService } from "./settingsService";
 
 export const DEFAULT_PROMPT = `Analyze this URL: {{url}}. 
-Generate a concise title (max 6 words) and description (max 20 words) in Hebrew and English. 
+Generate a concise title (max 4 words), a short subtitle (max 6 words), and a description (max 20 words) in Hebrew and English. 
 Also, generate up to 5 relevant tags (short keywords) in Hebrew.
 IMPORTANT: 
+The subtitle should be a catchy one-liner that appears under the title.
 The tone should be inviting and suitable for a "digital gifts" discovery website.`;
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
@@ -32,6 +33,10 @@ export const geminiService = {
           promptTemplate = `Analyze this URL: {{url}}. Generate a concise description (max 20 words) in Hebrew.`;
         } else if (specificField === 'description_en') {
           promptTemplate = `Analyze this URL: {{url}}. Generate a concise description (max 20 words) in English.`;
+        } else if (specificField === 'subtitle_he') {
+          promptTemplate = `Analyze this URL: {{url}}. Generate a short subtitle (max 6 words) in Hebrew.`;
+        } else if (specificField === 'subtitle_en') {
+          promptTemplate = `Analyze this URL: {{url}}. Generate a short subtitle (max 6 words) in English.`;
         }
       }
 

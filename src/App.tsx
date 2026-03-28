@@ -20,6 +20,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from './services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuthStore } from './store/authStore';
+import { DebugPanel } from './components/DebugPanel';
 
 const router = createBrowserRouter([
   {
@@ -59,5 +60,10 @@ export default function App() {
     return () => unsubscribe();
   }, [setUser, setLoading]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <DebugPanel />
+    </>
+  );
 }

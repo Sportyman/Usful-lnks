@@ -4,13 +4,15 @@
  */
 
 import { create } from 'zustand';
-import { Link as LinkType, Category } from '../types';
+import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { linkService } from '../services/linkService';
 import { categoryService } from '../services/categoryService';
+import { settingsService } from '../services/settingsService';
 
 interface DataState {
   links: LinkType[];
   categories: Category[];
+  settings: GlobalSettings | null;
   isLoading: boolean;
   hasLoaded: boolean;
   error: string | null;
@@ -20,6 +22,7 @@ interface DataState {
 export const useDataStore = create<DataState>((set, get) => ({
   links: [],
   categories: [],
+  settings: null,
   isLoading: false,
   hasLoaded: false,
   error: null,
@@ -28,11 +31,12 @@ export const useDataStore = create<DataState>((set, get) => ({
     
     set({ isLoading: true, error: null });
     try {
-      const [links, categories] = await Promise.all([
+      const [links, categories, settings] = await Promise.all([
         linkService.getAllLinks(true),
-        categoryService.getAllCategories(true)
+        categoryService.getAllCategories(true),
+        settingsService.getGlobalSettings()
       ]);
-      set({ links, categories, hasLoaded: true, error: null });
+      set({ links, categories, settings, hasLoaded: true, error: null });
     } catch (error: any) {
       console.error('Failed to fetch data:', error);
       set({ error: error.message || 'Failed to connect to database' });

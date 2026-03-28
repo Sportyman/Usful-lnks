@@ -5,6 +5,9 @@
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Cormorant Garamond", serif;
   
+  --color-primary: var(--primary-color, #FFD23F);
+  --color-secondary: var(--secondary-color, #F27D26);
+  
   --color-bg-soft: #F8F7F4;
   --color-ink-900: #0A0A0A;
   --color-ink-500: #666666;
@@ -45,9 +48,9 @@
   }
   
   .squircle {
-    border-radius: 24px;
+    border-radius: var(--global-radius, 24px);
     @media (min-width: 640px) {
-      border-radius: 32px;
+      border-radius: calc(var(--global-radius, 24px) * 1.33);
     }
   }
 

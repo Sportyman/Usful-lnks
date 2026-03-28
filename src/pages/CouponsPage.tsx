@@ -8,7 +8,7 @@ import { Coupon } from '../types/coupon';
 import { cn } from '../utils/cn';
 
 export default function CouponsPage() {
-  const { language } = useLanguageStore();
+  const { language, isRTL } = useLanguageStore();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming'>('active');
@@ -40,7 +40,13 @@ export default function CouponsPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div 
+      className={cn(
+        "container mx-auto px-4 py-8 max-w-6xl",
+        isRTL ? "text-right" : "text-left"
+      )}
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -50,6 +50,8 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
   const [formData, setFormData] = useState({
     title_he: initialData?.title_he || '',
     title_en: initialData?.title_en || '',
+    subtitle_he: initialData?.subtitle_he || '',
+    subtitle_en: initialData?.subtitle_en || '',
     description_he: initialData?.description_he || '',
     description_en: initialData?.description_en || '',
     targetUrl: initialData?.targetUrl || '',
@@ -57,6 +59,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     categoryId: initialData?.categoryId || (categories[0]?.id || ''),
     isActive: initialData?.isActive ?? true,
     tags: initialData?.tags || [],
+    textAlign: initialData?.textAlign || 'right',
   });
 
   // Reset image error when URL changes
@@ -344,6 +347,39 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+                {language === 'he' ? 'תיאור משנה בעברית' : 'Subtitle (Hebrew)'}
+              </label>
+              <FieldGeneratorButton field="subtitle_he" />
+            </div>
+            <input
+              type="text"
+              value={formData.subtitle_he}
+              onChange={e => setFormData({ ...formData, subtitle_he: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+              placeholder={language === 'he' ? 'למשל: צפייה באנימה בעברית' : 'e.g., Watch Anime in Hebrew'}
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+                {language === 'he' ? 'תיאור משנה באנגלית' : 'Subtitle (English)'}
+              </label>
+              <FieldGeneratorButton field="subtitle_en" />
+            </div>
+            <input
+              type="text"
+              value={formData.subtitle_en}
+              onChange={e => setFormData({ ...formData, subtitle_en: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+              placeholder={language === 'he' ? 'למשל: Watch Anime in Hebrew' : 'e.g., Watch Anime in Hebrew'}
+            />
+          </div>
+        </div>
+
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
@@ -404,22 +440,44 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
           </div>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'קטגוריה' : 'Category'}
-          </label>
-          <select
-            required
-            value={formData.categoryId}
-            onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
-          >
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {language === 'he' ? cat.name_he : cat.name_en}
-              </option>
-            ))}
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'קטגוריה' : 'Category'}
+            </label>
+            <select
+              required
+              value={formData.categoryId}
+              onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+            >
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {language === 'he' ? cat.name_he : cat.name_en}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'יישור טקסט' : 'Text Align'}
+            </label>
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
+              {(['left', 'center', 'right'] as const).map((align) => (
+                <button
+                  key={align}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, textAlign: align })}
+                  className={cn(
+                    "flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all",
+                    formData.textAlign === align ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  {align}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

@@ -12,12 +12,19 @@ export interface Category {
   slug: string;
   order: number;
   isActive: boolean;
+  imageUrl?: string;
+  imageFit?: 'cover' | 'contain' | 'fill';
+  imageZoom?: number;
+  textAlign?: 'right' | 'left' | 'center';
+  isComingSoon?: boolean;
 }
 
 export interface Link {
   id: string;
   title_he: string;
   title_en: string;
+  subtitle_he?: string;
+  subtitle_en?: string;
   description_he: string;
   description_en: string;
   targetUrl: string;
@@ -27,6 +34,7 @@ export interface Link {
   createdAt: any; // Firestore Timestamp
   isActive: boolean;
   clicks: number;
+  textAlign?: 'right' | 'left' | 'center';
 }
 
 export interface UserProfile {
@@ -40,6 +48,15 @@ export interface GlobalSettings {
   affiliateUrlHistory?: { url: string; timestamp: number }[];
   aiPrompt?: string;
   aiModel?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  fontFamily?: string;
+  borderRadius?: string;
+  showHeroMarquee?: boolean;
+  heroMarqueeText?: string;
+  siteTitle?: string;
+  siteDescription_he?: string;
+  siteDescription_en?: string;
 }
 
 declare global {

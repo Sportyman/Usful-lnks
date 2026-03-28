@@ -57,7 +57,10 @@ export function CouponCard({ coupon }: CouponCardProps) {
   };
 
   return (
-    <div className="bg-white border-2 border-black rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col justify-between h-full relative overflow-hidden">
+    <div className={cn(
+      "bg-white border-2 border-black rounded-xl p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col justify-between h-full relative overflow-hidden",
+      language === 'he' ? "text-right" : "text-left"
+    )}>
       
       {/* Event Badge */}
       {coupon.event && (
