@@ -8,6 +8,7 @@ import {
   RouterProvider, 
   Navigate 
 } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { RootLayout } from './components/layout/RootLayout';
 import HomePage from './pages/HomePage';
 import RedirectPage from './pages/RedirectPage';
@@ -61,9 +62,9 @@ export default function App() {
   }, [setUser, setLoading]);
 
   return (
-    <>
+    <HelmetProvider>
       <RouterProvider router={router} />
       <DebugPanel />
-    </>
+    </HelmetProvider>
   );
 }

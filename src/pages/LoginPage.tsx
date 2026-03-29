@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, db, googleProvider } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -23,6 +23,15 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { setUser } = useAuthStore();
   const { language, isRTL } = useLanguageStore();
+  const googleBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // Focus and scroll to the Google button when the page loads
+    if (googleBtnRef.current) {
+      googleBtnRef.current.focus();
+      googleBtnRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
 
   const verifyAdmin = async (uid: string, userEmail: string) => {
     const userDoc = await getDoc(doc(db, 'users', uid));
@@ -101,8 +110,9 @@ export default function LoginPage() {
         </div>
 
         <Button 
+          ref={googleBtnRef}
           variant="outline" 
-          className="w-full flex gap-3 h-14 rounded-2xl border-black/5 hover:bg-white" 
+          className="w-full flex gap-3 h-14 rounded-2xl border-black/5 hover:bg-white focus:ring-2 focus:ring-accent-peach" 
           onClick={handleGoogleLogin}
           isLoading={isLoading}
         >

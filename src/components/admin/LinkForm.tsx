@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Link, Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check } from 'lucide-react';
+import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check, Search } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { generateSeoMetadata } from '../../services/seoService';
 import { cn } from '../../utils/cn';
 
 interface LinkFormProps {
@@ -60,6 +61,12 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     isActive: initialData?.isActive ?? true,
     tags: initialData?.tags || [],
     textAlign: initialData?.textAlign || 'right',
+    seoTitle_he: initialData?.seoTitle_he || '',
+    seoTitle_en: initialData?.seoTitle_en || '',
+    seoDescription_he: initialData?.seoDescription_he || '',
+    seoDescription_en: initialData?.seoDescription_en || '',
+    seoKeywords_he: initialData?.seoKeywords_he || '',
+    seoKeywords_en: initialData?.seoKeywords_en || '',
   });
 
   // Reset image error when URL changes
@@ -75,7 +82,9 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
 
     setAiError(null);
 
-    if (specificField) {
+    if (specificField === 'seo_he' || specificField === 'seo_en') {
+      setGeneratingField(specificField);
+    } else if (specificField) {
       setGeneratingField(specificField);
     } else {
       setIsGenerating(true);
@@ -84,6 +93,24 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     if (specificField === 'imageUrl') setImageError(false);
 
     try {
+      if (specificField === 'seo_he' || specificField === 'seo_en') {
+        const lang = specificField === 'seo_he' ? 'he' : 'en';
+        const seo = await generateSeoMetadata({
+          title: lang === 'he' ? formData.title_he : formData.title_en,
+          description: lang === 'he' ? formData.description_he : formData.description_en,
+          subtitle: lang === 'he' ? formData.subtitle_he : formData.subtitle_en,
+          tags: formData.tags
+        }, lang);
+        
+        setFormData(prev => ({
+          ...prev,
+          [`seoTitle_${lang}`]: seo.title,
+          [`seoDescription_${lang}`]: seo.description,
+          [`seoKeywords_${lang}`]: seo.keywords,
+        }));
+        return;
+      }
+
       const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt, specificField);
       
       setFormData(prev => {
@@ -479,6 +506,135 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             </div>
           </div>
         </div>
+        </div>
+
+        {/* SEO Section */}
+        <div className="pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Search className="w-4 h-4 text-accent-peach-darker" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-ink-900">
+              {language === 'he' ? 'הגדרות SEO וחיפוש' : 'SEO & Search Settings'}
+            </h3>
+          </div>
+
+          <div className="space-y-6">
+            {/* Hebrew SEO */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  {language === 'he' ? 'SEO בעברית' : 'SEO (Hebrew)'}
+                </h4>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleMagicGenerate('seo_he')}
+                  isLoading={generatingField === 'seo_he'}
+                  className="h-8 px-3 text-[10px]"
+                >
+                  <Wand2 className="w-3 h-3 mr-1.5" />
+                  {language === 'he' ? 'ייצר SEO אוטומטי' : 'Auto-generate SEO'}
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    {language === 'he' ? 'כותרת SEO' : 'SEO Title'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seoTitle_he}
+                    onChange={e => setFormData({ ...formData, seoTitle_he: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-accent-peach"
+                    placeholder={language === 'he' ? 'כותרת שתוצג בגוגל' : 'Title for Google'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    {language === 'he' ? 'תיאור SEO' : 'SEO Description'}
+                  </label>
+                  <textarea
+                    value={formData.seoDescription_he}
+                    onChange={e => setFormData({ ...formData, seoDescription_he: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-accent-peach h-20"
+                    placeholder={language === 'he' ? 'תיאור שיופיע בתוצאות החיפוש' : 'Description for search results'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    {language === 'he' ? 'מילות מפתח' : 'Keywords'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seoKeywords_he}
+                    onChange={e => setFormData({ ...formData, seoKeywords_he: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-accent-peach"
+                    placeholder={language === 'he' ? 'מילה1, מילה2...' : 'keyword1, keyword2...'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* English SEO */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  {language === 'he' ? 'SEO באנגלית' : 'SEO (English)'}
+                </h4>
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleMagicGenerate('seo_en')}
+                  isLoading={generatingField === 'seo_en'}
+                  className="h-8 px-3 text-[10px]"
+                >
+                  <Wand2 className="w-3 h-3 mr-1.5" />
+                  {language === 'he' ? 'ייצר SEO אוטומטי' : 'Auto-generate SEO'}
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    {language === 'he' ? 'כותרת SEO' : 'SEO Title'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seoTitle_en}
+                    onChange={e => setFormData({ ...formData, seoTitle_en: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-accent-peach"
+                    placeholder={language === 'he' ? 'Title for Google' : 'Title for Google'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    {language === 'he' ? 'תיאור SEO' : 'SEO Description'}
+                  </label>
+                  <textarea
+                    value={formData.seoDescription_en}
+                    onChange={e => setFormData({ ...formData, seoDescription_en: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-accent-peach h-20"
+                    placeholder={language === 'he' ? 'Description for search results' : 'Description for search results'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                    {language === 'he' ? 'מילות מפתח' : 'Keywords'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.seoKeywords_en}
+                    onChange={e => setFormData({ ...formData, seoKeywords_en: e.target.value })}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-accent-peach"
+                    placeholder={language === 'he' ? 'keyword1, keyword2...' : 'keyword1, keyword2...'}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="flex items-center gap-3">
           <input
@@ -492,9 +648,8 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             {language === 'he' ? 'פעיל' : 'Active'}
           </label>
         </div>
-      </div>
 
-      <div className="flex gap-3 pt-4">
+        <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" isLoading={isLoading}>
           {language === 'he' ? 'שמור' : 'Save'}
         </Button>

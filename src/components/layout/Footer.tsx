@@ -16,6 +16,7 @@ export function Footer() {
 
   useEffect(() => {
     if (clickCount >= ADMIN_CLICK_TRIGGER) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       navigate('/login');
       setClickCount(0);
     }

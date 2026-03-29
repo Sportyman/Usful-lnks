@@ -17,6 +17,12 @@ export interface Category {
   imageZoom?: number;
   textAlign?: 'right' | 'left' | 'center';
   isComingSoon?: boolean;
+  seoTitle_he?: string;
+  seoTitle_en?: string;
+  seoDescription_he?: string;
+  seoDescription_en?: string;
+  seoKeywords_he?: string;
+  seoKeywords_en?: string;
 }
 
 export interface Link {
@@ -35,6 +41,12 @@ export interface Link {
   isActive: boolean;
   clicks: number;
   textAlign?: 'right' | 'left' | 'center';
+  seoTitle_he?: string;
+  seoTitle_en?: string;
+  seoDescription_he?: string;
+  seoDescription_en?: string;
+  seoKeywords_he?: string;
+  seoKeywords_en?: string;
 }
 
 export interface UserProfile {
@@ -46,7 +58,9 @@ export interface UserProfile {
 export interface GlobalSettings {
   affiliateUrl: string;
   affiliateUrlHistory?: { url: string; timestamp: number }[];
-  aiPrompt?: string;
+  aiPrompt?: string; // Legacy field, keeping for compatibility
+  aiPromptLinks?: string;
+  aiPromptCategories?: string;
   aiModel?: string;
   primaryColor?: string;
   secondaryColor?: string;
@@ -54,9 +68,13 @@ export interface GlobalSettings {
   borderRadius?: string;
   showHeroMarquee?: boolean;
   heroMarqueeText?: string;
-  siteTitle?: string;
+  siteTitle_he?: string;
+  siteTitle_en?: string;
   siteDescription_he?: string;
   siteDescription_en?: string;
+  siteKeywords_he?: string;
+  siteKeywords_en?: string;
+  siteOgImage?: string;
 }
 
 declare global {

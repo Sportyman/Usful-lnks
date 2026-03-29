@@ -5,6 +5,7 @@
 
 import { useEffect, useState, useMemo, useRef, ReactNode } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useAnimationFrame } from 'motion/react';
+import { Helmet } from 'react-helmet-async';
 import { useLanguageStore } from '../store/languageStore';
 import { useDataStore } from '../store/dataStore';
 import { useDebugStore } from '../store/debugStore';
@@ -379,6 +380,45 @@ export default function HomePage() {
       ref={containerRef}
       dir={isRTL ? 'rtl' : 'ltr'}
     >
+      <Helmet>
+        <title>
+          {selectedCategory 
+            ? (language === 'he' ? (selectedCategory.seoTitle_he || selectedCategory.name_he) : (selectedCategory.seoTitle_en || selectedCategory.name_en))
+            : (language === 'he' ? (settings?.siteTitle_he || 'DIGITAL.GIFTS') : (settings?.siteTitle_en || 'DIGITAL.GIFTS'))}
+        </title>
+        <meta 
+          name="description" 
+          content={selectedCategory 
+            ? (language === 'he' ? (selectedCategory.seoDescription_he || '') : (selectedCategory.seoDescription_en || ''))
+            : (language === 'he' ? (settings?.siteDescription_he || 'האוסף האולטימטיבי של כלים דיגיטליים') : (settings?.siteDescription_en || 'The ultimate collection of digital tools'))} 
+        />
+        <meta 
+          name="keywords" 
+          content={selectedCategory 
+            ? (language === 'he' ? (selectedCategory.seoKeywords_he || '') : (selectedCategory.seoKeywords_en || ''))
+            : (language === 'he' ? (settings?.siteKeywords_he || 'מתנות, דיגיטל, כלים') : (settings?.siteKeywords_en || 'gifts, digital, tools'))} 
+        />
+        
+        {/* Open Graph / Social Media */}
+        <meta property="og:type" content="website" />
+        <meta 
+          property="og:title" 
+          content={selectedCategory 
+            ? (language === 'he' ? (selectedCategory.seoTitle_he || selectedCategory.name_he) : (selectedCategory.seoTitle_en || selectedCategory.name_en))
+            : (language === 'he' ? (settings?.siteTitle_he || 'DIGITAL.GIFTS') : (settings?.siteTitle_en || 'DIGITAL.GIFTS'))} 
+        />
+        <meta 
+          property="og:description" 
+          content={selectedCategory 
+            ? (language === 'he' ? (selectedCategory.seoDescription_he || '') : (selectedCategory.seoDescription_en || ''))
+            : (language === 'he' ? (settings?.siteDescription_he || 'האוסף האולטימטיבי של כלים דיגיטליים') : (settings?.siteDescription_en || 'The ultimate collection of digital tools'))} 
+        />
+        <meta 
+          property="og:image" 
+          content={selectedCategory?.imageUrl || settings?.siteOgImage || 'https://picsum.photos/seed/digitalgifts/1200/630'} 
+        />
+        <meta property="og:url" content={window.location.href} />
+      </Helmet>
       
       {/* --- HERO SECTION --- */}
       <header className="relative pt-8 pb-8 md:pt-16 md:pb-12 overflow-hidden">
@@ -393,7 +433,7 @@ export default function HomePage() {
               >
                 {Array(6).fill(0).map((_, i) => (
                   <span key={i} className="text-[6rem] md:text-[10rem] font-black uppercase mx-4 md:mx-8">
-                    {settings?.heroMarqueeText || `${settings?.siteTitle || 'DIGITAL.GIFTS'} COLLECTION 2026`}
+                    {settings?.heroMarqueeText || `${settings?.siteTitle_he || 'DIGITAL.GIFTS'} COLLECTION 2026`}
                   </span>
                 ))}
               </motion.div>
@@ -420,7 +460,7 @@ export default function HomePage() {
               </span>
             ) : (
               <span className="whitespace-nowrap">
-                {settings?.siteTitle?.split('.')[0] || 'DIGITAL'}<span className="text-[#FF6B6B]">.</span>{settings?.siteTitle?.split('.')[1] || 'GIFTS'}
+                {settings?.siteTitle_he?.split('.')[0] || 'DIGITAL'}<span className="text-[#FF6B6B]">.</span>{settings?.siteTitle_he?.split('.')[1] || 'GIFTS'}
               </span>
             )}
           </motion.h1>

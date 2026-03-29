@@ -1,11 +1,26 @@
 import { settingsService } from "./settingsService";
 
-export const DEFAULT_PROMPT = `Analyze this URL: {{url}}. 
-Generate a concise title (max 4 words), a short subtitle (max 6 words), and a description (max 20 words) in Hebrew and English. 
+export const DEFAULT_LINK_PROMPT = `You are a professional SEO expert and content strategist. 
+Analyze this URL: {{url}}. 
+Generate a high-converting, SEO-optimized title (max 4 words), a catchy subtitle (max 6 words), and a compelling description (max 20 words) in Hebrew and English. 
 Also, generate up to 5 relevant tags (short keywords) in Hebrew.
-IMPORTANT: 
-The subtitle should be a catchy one-liner that appears under the title.
-The tone should be inviting and suitable for a "digital gifts" discovery website.`;
+
+Guidelines:
+- Title: Must be punchy and include the main keyword.
+- Subtitle: A magnetic one-liner that highlights the value proposition.
+- Description: Concise, persuasive, and optimized for click-through rate.
+- Tone: Professional yet inviting, suitable for a "digital gifts" and "lifestyle" discovery platform.
+- Language: Natural-sounding Hebrew and English.`;
+
+export const DEFAULT_CATEGORY_PROMPT = `You are a professional SEO expert.
+Analyze this category name: {{name}}.
+Generate a professional SEO title and a compelling meta description in Hebrew and English.
+Also, generate relevant keywords in Hebrew.
+
+Guidelines:
+- Title: SEO-optimized, including the category name.
+- Description: Engaging summary that encourages exploration.
+- Tone: Professional and authoritative.`;
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash";
@@ -20,7 +35,7 @@ export const geminiService = {
         return await this.fetchOgImage(url);
       }
 
-      let promptTemplate = customPrompt || settings.aiPrompt || DEFAULT_PROMPT;
+      let promptTemplate = customPrompt || settings.aiPromptLinks || settings.aiPrompt || DEFAULT_LINK_PROMPT;
       
       if (specificField) {
         if (specificField === 'tags') {
@@ -105,12 +120,21 @@ export const geminiService = {
 
   async generateCategoryInfo(inputName: string) {
     try {
+      const settings = await settingsService.getGlobalSettings();
+      const promptTemplate = settings.aiPromptCategories || DEFAULT_CATEGORY_PROMPT;
+      const finalPrompt = promptTemplate.replace('{{name}}', inputName);
+      const selectedModel = settings.aiModel || PRIMARY_MODEL;
+
       const response = await fetch('/api/gemini/generate-category-info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ inputName })
+        body: JSON.stringify({ 
+          inputName,
+          prompt: finalPrompt,
+          modelName: selectedModel
+        })
       });
 
       if (!response.ok) {

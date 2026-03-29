@@ -9,11 +9,11 @@ import { useNavigate } from 'react-router-dom';
 import { linkService } from '../services/linkService';
 import { categoryService } from '../services/categoryService';
 import { settingsService } from '../services/settingsService';
-import { DEFAULT_PROMPT } from '../services/geminiService';
+import { bulkSeoService, BulkSeoProgress } from '../services/bulkSeoService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import { useDebugStore } from '../store/debugStore';
 import { auth } from '../services/firebase';
@@ -22,9 +22,11 @@ import { Modal } from '../components/ui/Modal';
 import { TaskWindow } from '../components/ui/TaskWindow';
 import { CategoryForm } from '../components/admin/CategoryForm';
 import { LinkForm } from '../components/admin/LinkForm';
+import { PromptEditorTab } from '../components/admin/PromptEditorTab';
 import { useDataStore } from '../store/dataStore';
 import { cn } from '../utils/cn';
 import { AFFILIATE_BASE_URL } from '../config/constants';
+import { motion } from 'motion/react';
 
 export default function AdminDashboard() {
   const { user, isLoading: authLoading, setUser } = useAuthStore();
@@ -34,9 +36,13 @@ export default function AdminDashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<GlobalSettings>({ 
     affiliateUrl: '',
-    siteTitle: '',
+    siteTitle_he: '',
+    siteTitle_en: '',
     siteDescription_he: '',
     siteDescription_en: '',
+    siteKeywords_he: '',
+    siteKeywords_en: '',
+    siteOgImage: '',
     primaryColor: '#FFD23F',
     secondaryColor: '#F27D26',
     fontFamily: 'Inter',
@@ -46,9 +52,13 @@ export default function AdminDashboard() {
   });
   const [originalSettings, setOriginalSettings] = useState<GlobalSettings>({ 
     affiliateUrl: '',
-    siteTitle: '',
+    siteTitle_he: '',
+    siteTitle_en: '',
     siteDescription_he: '',
     siteDescription_en: '',
+    siteKeywords_he: '',
+    siteKeywords_en: '',
+    siteOgImage: '',
     primaryColor: '#FFD23F',
     secondaryColor: '#F27D26',
     fontFamily: 'Inter',
@@ -58,7 +68,9 @@ export default function AdminDashboard() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics'>('content');
+  const [bulkSeoProgress, setBulkSeoProgress] = useState<BulkSeoProgress | null>(null);
+  const [isBulkSeoRunning, setIsBulkSeoRunning] = useState(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics' | 'prompts'>('content');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState<any>(null);
   const [isCopied, setIsCopied] = useState(false);
@@ -68,6 +80,7 @@ export default function AdminDashboard() {
   const [linkModal, setLinkModal] = useState<{ isOpen: boolean; editing?: LinkType }>({ isOpen: false });
   const [isLinkModalMinimized, setIsLinkModalMinimized] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; type?: 'category' | 'link'; id?: string }>({ isOpen: false });
+  const [bulkSeoConfirm, setBulkSeoConfirm] = useState(false);
 
   const { showDebugButton, setShowDebugButton } = useDebugStore();
 
@@ -126,6 +139,10 @@ export default function AdminDashboard() {
           MODE: import.meta.env.MODE,
           PROD: import.meta.env.PROD,
           DEV: import.meta.env.DEV,
+        },
+        seoStatus: {
+          missingCategories: categories.filter(c => !c.seoTitle_he || !c.seoTitle_en).length,
+          missingLinks: links.filter(l => !l.seoTitle_he || !l.seoTitle_en).length
         }
       };
 
@@ -247,6 +264,31 @@ export default function AdminDashboard() {
     navigate('/');
   };
 
+  const handleBulkSeo = async () => {
+    setBulkSeoConfirm(false);
+    setIsBulkSeoRunning(true);
+    setBulkSeoProgress(null);
+    console.log('Starting Bulk SEO Process...');
+    try {
+      await bulkSeoService.generateForMissing((progress) => {
+        console.log('Bulk SEO Progress:', progress.current, '/', progress.total, progress.status);
+        setBulkSeoProgress(progress);
+      });
+      await loadData();
+    } catch (err) {
+      console.error('Bulk SEO failed:', err);
+      setBulkSeoProgress({
+        total: 0,
+        current: 0,
+        status: language === 'he' ? 'שגיאה בתהליך' : 'Process Error',
+        isComplete: true,
+        errors: [err instanceof Error ? err.message : String(err)]
+      });
+    } finally {
+      setIsBulkSeoRunning(false);
+    }
+  };
+
   if (authLoading || isLoading) return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="w-8 h-8 border-4 border-ink-900 border-t-transparent rounded-full animate-spin" />
@@ -256,6 +298,109 @@ export default function AdminDashboard() {
   const totalClicks = links.reduce((acc, link) => acc + link.clicks, 0);
   const topLinks = [...links].sort((a, b) => b.clicks - a.clicks).slice(0, 5);
   const isSettingsDirty = settings.affiliateUrl !== originalSettings.affiliateUrl || settings.aiPrompt !== originalSettings.aiPrompt || settings.aiModel !== originalSettings.aiModel;
+
+  const renderBulkSeoSection = () => (
+    <div className={cn(
+      "bg-white p-6 rounded-2xl border shadow-sm space-y-6 transition-all duration-500",
+      isBulkSeoRunning ? "border-accent-peach ring-1 ring-accent-peach/20" : "border-black/5"
+    )}>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h3 className="font-bold text-lg text-ink-900 flex items-center gap-2">
+            <Search className={cn("w-5 h-5", isBulkSeoRunning ? "text-accent-peach animate-pulse" : "text-accent-peach-darker")} />
+            {language === 'he' ? 'אופטימיזציית SEO גורפת' : 'Bulk SEO Optimization'}
+          </h3>
+          <p className="text-xs text-ink-500">
+            {language === 'he' 
+              ? 'ייצר אוטומטית מטא-דאטה (כותרות ותיאורים) לכל הקטגוריות והקישורים שחסר להם מידע SEO.' 
+              : 'Automatically generate metadata (titles and descriptions) for all categories and links missing SEO info.'}
+          </p>
+        </div>
+        {bulkSeoProgress?.isComplete && (
+          <button 
+            onClick={() => setBulkSeoProgress(null)}
+            className="text-[10px] font-bold uppercase tracking-widest text-ink-400 hover:text-ink-900"
+          >
+            {language === 'he' ? 'סגור' : 'Dismiss'}
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {(isBulkSeoRunning || bulkSeoProgress) && (
+          <div className={cn(
+            "p-4 rounded-xl border transition-all",
+            bulkSeoProgress?.isComplete ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100"
+          )}>
+            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest mb-2">
+              <span className={bulkSeoProgress?.isComplete ? "text-green-600" : "text-slate-500"}>
+                {bulkSeoProgress?.status || (language === 'he' ? 'מכין...' : 'Preparing...')}
+              </span>
+              <span className="text-slate-400">
+                {bulkSeoProgress ? `${bulkSeoProgress.current} / ${bulkSeoProgress.total}` : '0 / 0'}
+              </span>
+            </div>
+            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+              <motion.div 
+                className={cn("h-full", bulkSeoProgress?.isComplete ? "bg-green-500" : "bg-accent-peach")}
+                initial={{ width: 0 }}
+                animate={{ width: bulkSeoProgress ? `${(bulkSeoProgress.current / bulkSeoProgress.total) * 100}%` : '0%' }}
+              />
+            </div>
+            {bulkSeoProgress?.errors && bulkSeoProgress.errors.length > 0 && (
+              <div className="mt-3 p-2 bg-red-50 rounded-lg border border-red-100 text-[10px] text-red-600 space-y-1">
+                <div className="flex items-center gap-1 font-bold">
+                  <AlertCircle className="w-3 h-3" />
+                  {language === 'he' ? 'שגיאות שאירעו:' : 'Errors occurred:'}
+                </div>
+                <ul className="list-disc list-inside">
+                  {bulkSeoProgress.errors.slice(0, 3).map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                  {bulkSeoProgress.errors.length > 3 && <li>...ועוד {bulkSeoProgress.errors.length - 3} שגיאות</li>}
+                </ul>
+              </div>
+            )}
+            {bulkSeoProgress?.isComplete && bulkSeoProgress.errors.length === 0 && (
+              <div className="mt-2 flex items-center gap-2 text-green-600 text-[10px] font-bold">
+                <CheckCircle2 className="w-3 h-3" />
+                {language === 'he' ? 'התהליך הושלם בהצלחה!' : 'Process completed successfully!'}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isBulkSeoRunning && (!bulkSeoProgress || bulkSeoProgress.isComplete) && (
+          <Button 
+            onClick={() => {
+              console.log('Bulk SEO Button Clicked');
+              setBulkSeoConfirm(true);
+            }}
+            variant="secondary"
+            className="w-full h-12 border-accent-peach/20 hover:border-accent-peach/40 text-accent-peach-darker"
+          >
+            <Wand2 className="w-4 h-4 mr-2" />
+            {language === 'he' ? 'הרץ אופטימיזציה לכל האתר' : 'Run Site-wide Optimization'}
+          </Button>
+        )}
+        
+        {isBulkSeoRunning && (
+          <div className="flex items-center justify-center gap-3 py-2">
+            <div className="w-4 h-4 border-2 border-accent-peach border-t-transparent rounded-full animate-spin" />
+            <span className="text-xs font-bold text-accent-peach-darker animate-pulse">
+              {language === 'he' ? 'מבצע אופטימיזציה... נא לא לסגור את הדף' : 'Optimizing... Please do not close this page'}
+            </span>
+          </div>
+        )}
+
+        <p className="text-[10px] text-center text-ink-400 italic">
+          {language === 'he' 
+            ? '* פעולה זו משתמשת בבינה מלאכותית ועשויה לקחת מספר דקות בהתאם לכמות התוכן.' 
+            : '* This action uses AI and may take several minutes depending on the amount of content.'}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-bg-soft pb-20">
@@ -280,6 +425,7 @@ export default function AdminDashboard() {
           {[
             { id: 'content', label: language === 'he' ? 'תוכן' : 'Content', icon: ExternalLink },
             { id: 'analytics', label: language === 'he' ? 'נתונים' : 'Analytics', icon: BarChart2 },
+            { id: 'prompts', label: language === 'he' ? 'פרומפטים' : 'Prompts', icon: Wand2 },
             { id: 'settings', label: language === 'he' ? 'הגדרות' : 'Settings', icon: Settings },
             { id: 'diagnostics', label: language === 'he' ? 'אבחון' : 'Diagnostics', icon: Activity }
           ].map(tab => (
@@ -304,6 +450,9 @@ export default function AdminDashboard() {
         {/* Content Tab */}
         {activeTab === 'content' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Bulk SEO Section (Quick Access) */}
+            {renderBulkSeoSection()}
+
             {/* Categories */}
             <section className="space-y-4">
               <div className="flex items-center justify-between">
@@ -402,6 +551,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Prompts Tab */}
+        {activeTab === 'prompts' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <PromptEditorTab />
+          </div>
+        )}
+
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -448,6 +604,8 @@ export default function AdminDashboard() {
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {renderBulkSeoSection()}
+            
             {/* General Site Info */}
             <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
               <div className="space-y-1">
@@ -458,17 +616,31 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-                    {language === 'he' ? 'כותרת האתר' : 'Site Title'}
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.siteTitle || ''}
-                    onChange={(e) => setSettings({ ...settings, siteTitle: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
-                    placeholder="DIGITAL.GIFTS"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'כותרת האתר (עברית)' : 'Site Title (Hebrew)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.siteTitle_he || ''}
+                      onChange={(e) => setSettings({ ...settings, siteTitle_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                      placeholder="DIGITAL.GIFTS"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'כותרת האתר (אנגלית)' : 'Site Title (English)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.siteTitle_en || ''}
+                      onChange={(e) => setSettings({ ...settings, siteTitle_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                      placeholder="DIGITAL.GIFTS"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -491,6 +663,44 @@ export default function AdminDashboard() {
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm h-20"
                     />
                   </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'מילות מפתח (עברית)' : 'Keywords (Hebrew)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.siteKeywords_he || ''}
+                      onChange={(e) => setSettings({ ...settings, siteKeywords_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                      placeholder="keyword1, keyword2..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                      {language === 'he' ? 'מילות מפתח (אנגלית)' : 'Keywords (English)'}
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.siteKeywords_en || ''}
+                      onChange={(e) => setSettings({ ...settings, siteKeywords_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                      placeholder="keyword1, keyword2..."
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'תמונת שיתוף (OG Image URL)' : 'Social Share Image (OG Image URL)'}
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.siteOgImage || ''}
+                    onChange={(e) => setSettings({ ...settings, siteOgImage: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm"
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
             </div>
@@ -695,66 +905,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* AI Prompt Settings */}
-            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
-              <div className="space-y-1">
-                <h3 className="font-bold text-lg text-ink-900">{language === 'he' ? 'הגדרות בינה מלאכותית' : 'AI Settings'}</h3>
-                <p className="text-xs text-ink-500">
-                  {language === 'he' ? 'ערוך את ההנחיות לבינה המלאכותית בעת יצירת תוכן לקישורים.' : 'Edit the AI prompt used for generating link content.'}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Prompt Editor */}
-                  <div className="relative md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-                      {language === 'he' ? 'הנחיית בינה מלאכותית' : 'AI Prompt'}
-                    </label>
-                    <textarea
-                      value={settings.aiPrompt || DEFAULT_PROMPT}
-                      onChange={(e) => setSettings({ ...settings, aiPrompt: e.target.value })}
-                      className="w-full p-4 min-h-[120px] bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm font-mono resize-y"
-                      placeholder="Enter AI prompt..."
-                    />
-                    {settings.aiPrompt && settings.aiPrompt !== DEFAULT_PROMPT && (
-                      <button 
-                        onClick={() => setSettings({ ...settings, aiPrompt: DEFAULT_PROMPT })}
-                        className="absolute right-2 top-9 p-1.5 text-ink-400 hover:text-ink-900 hover:bg-gray-200 rounded-lg transition-colors"
-                        title={language === 'he' ? 'שחזר ברירת מחדל' : 'Restore Default'}
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </button>
-                    )}
-                    <p className="text-[10px] text-ink-400 mt-1">
-                      {language === 'he' ? 'השתמש ב-{{url}} כדי לציין היכן הכתובת תוכנס.' : 'Use {{url}} as a placeholder for the link URL.'}
-                    </p>
-                  </div>
-
-                  {/* Model Selector */}
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-                      {language === 'he' ? 'מודל ראשי' : 'Primary Model'}
-                    </label>
-                    <select
-                      value={settings.aiModel || "gemini-3-flash-preview"}
-                      onChange={(e) => setSettings({ ...settings, aiModel: e.target.value })}
-                      className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm font-mono"
-                    >
-                      <option value="gemini-3-flash-preview">Gemini 3 Flash (Recommended - Fast & Free)</option>
-                      <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fallback - Stable)</option>
-                      <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Slower, Low Quota)</option>
-                    </select>
-                    <p className="text-[10px] text-ink-400 mt-1">
-                      {language === 'he' 
-                        ? 'המערכת תנסה אוטומטית מודל גיבוי אם הראשון ייכשל. מומלץ להישאר עם Flash כדי להימנע משגיאות Quota.' 
-                        : 'System will automatically try a fallback model if the primary fails. Recommended to stick with Flash to avoid Quota errors.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* History Section */}
             {settings.affiliateUrlHistory && settings.affiliateUrlHistory.length > 0 && (
               <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-4">
@@ -919,6 +1069,36 @@ export default function AdminDashboard() {
               variant="secondary" 
               className="flex-1" 
               onClick={() => setDeleteConfirm({ isOpen: false })}
+            >
+              {language === 'he' ? 'ביטול' : 'Cancel'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={bulkSeoConfirm}
+        onClose={() => setBulkSeoConfirm(false)}
+        title={language === 'he' ? 'אופטימיזציית SEO גורפת' : 'Bulk SEO Optimization'}
+      >
+        <div className="space-y-6">
+          <p className="text-ink-700 font-medium">
+            {language === 'he' 
+              ? 'האם אתה בטוח שברצונך לייצר SEO לכל התכנים החסרים? פעולה זו עשויה לקחת זמן ותשתמש במכסת ה-AI שלך.' 
+              : 'Are you sure you want to generate SEO for all missing content? This may take some time and will use your AI quota.'}
+          </p>
+          <div className="flex gap-3">
+            <Button 
+              variant="primary" 
+              className="flex-1" 
+              onClick={handleBulkSeo}
+            >
+              {language === 'he' ? 'הרץ אופטימיזציה' : 'Run Optimization'}
+            </Button>
+            <Button 
+              variant="secondary" 
+              className="flex-1" 
+              onClick={() => setBulkSeoConfirm(false)}
             >
               {language === 'he' ? 'ביטול' : 'Cancel'}
             </Button>
