@@ -122,7 +122,7 @@ export default function AdminDashboard() {
       const response = await fetch('/api/diagnostics');
       const backendData = response.ok ? await response.json() : { error: `Backend returned ${response.status}` };
       
-      let geminiTest = null;
+      let geminiTest: any = null;
       try {
         const geminiRes = await fetch('/api/diagnostics/test-gemini');
         geminiTest = await geminiRes.json();

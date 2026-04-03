@@ -1,4 +1,5 @@
 import { settingsService } from "./settingsService";
+import { getIdToken } from "./firebase";
 
 export const DEFAULT_LINK_PROMPT = `You are a professional SEO expert and content strategist. 
 Analyze this URL: {{url}}. 
@@ -96,10 +97,12 @@ export const geminiService = {
   },
 
   async callGemini(modelName: string, prompt: string, specificField?: string) {
+    const idToken = await getIdToken();
     const response = await fetch('/api/gemini/generate-link-info', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
       },
       body: JSON.stringify({
         modelName,
@@ -125,10 +128,12 @@ export const geminiService = {
       const finalPrompt = promptTemplate.replace('{{name}}', inputName);
       const selectedModel = settings.aiModel || PRIMARY_MODEL;
 
+      const idToken = await getIdToken();
       const response = await fetch('/api/gemini/generate-category-info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
         },
         body: JSON.stringify({ 
           inputName,
@@ -151,10 +156,12 @@ export const geminiService = {
 
   async fetchOgImage(url: string) {
     try {
+      const idToken = await getIdToken();
       const response = await fetch('/api/fetch-og-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
         },
         body: JSON.stringify({ url })
       });

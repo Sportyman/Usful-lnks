@@ -42,23 +42,37 @@ export default function App() {
   const { setUser, setLoading } = useAuthStore();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email!,
-            role: userDoc.data().role
-          });
-        }
-      } else {
-        setUser(null);
-      }
+    // Safety timeout: Ensure loading is disabled even if Firebase hangs
+    const timeout = setTimeout(() => {
       setLoading(false);
+    }, 5000);
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser) {
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email!,
+              role: userDoc.data().role
+            });
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth state change error:', error);
+      } finally {
+        setLoading(false);
+        clearTimeout(timeout);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [setUser, setLoading]);
 
   return (

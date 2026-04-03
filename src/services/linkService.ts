@@ -6,6 +6,7 @@
 import { 
   collection, 
   getDocs, 
+  getDoc,
   query, 
   where, 
   orderBy, 
@@ -72,6 +73,15 @@ export const linkService = {
   async deleteLink(id: string) {
     const linkRef = doc(db, LINKS_COLLECTION, id);
     return await deleteDoc(linkRef);
+  },
+
+  async getLinkById(id: string) {
+    const linkRef = doc(db, LINKS_COLLECTION, id);
+    const snapshot = await getDoc(linkRef);
+    if (snapshot.exists()) {
+      return { id: snapshot.id, ...snapshot.data() } as Link;
+    }
+    return null;
   },
 
   async incrementClicks(id: string) {

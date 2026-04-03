@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "A category for grouping links",
+      "type": "object",
+      "properties": {
+        "name_he": { "type": "string", "description": "Name in Hebrew" },
+        "name_en": { "type": "string", "description": "Name in English" },
+        "slug": { "type": "string", "description": "URL-friendly slug" },
+        "seoTitle_he": { "type": "string" },
+        "seoTitle_en": { "type": "string" },
+        "seoDescription_he": { "type": "string" },
+        "seoDescription_en": { "type": "string" },
+        "seoKeywords_he": { "type": "string" },
+        "seoKeywords_en": { "type": "string" }
+      },
+      "required": ["name_he", "name_en", "slug"]
+    },
+    "Link": {
+      "title": "Link",
+      "description": "An affiliate or discovery link",
+      "type": "object",
+      "properties": {
+        "categoryId": { "type": "string", "description": "ID of the parent category" },
+        "url": { "type": "string", "format": "uri" },
+        "title_he": { "type": "string" },
+        "title_en": { "type": "string" },
+        "subtitle_he": { "type": "string" },
+        "subtitle_en": { "type": "string" },
+        "description_he": { "type": "string" },
+        "description_en": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "clicks": { "type": "integer", "description": "Number of clicks" },
+        "createdAt": { "type": "integer", "description": "Timestamp" },
+        "seoTitle_he": { "type": "string" },
+        "seoTitle_en": { "type": "string" },
+        "seoDescription_he": { "type": "string" },
+        "seoDescription_en": { "type": "string" },
+        "seoKeywords_he": { "type": "string" },
+        "seoKeywords_en": { "type": "string" }
+      },
+      "required": ["categoryId", "url", "title_he", "title_en", "createdAt"]
+    },
+    "GlobalSettings": {
+      "title": "GlobalSettings",
+      "description": "Site-wide configuration",
+      "type": "object",
+      "properties": {
+        "affiliateUrl": { "type": "string", "format": "uri" },
+        "siteTitle_he": { "type": "string" },
+        "siteTitle_en": { "type": "string" },
+        "siteDescription_he": { "type": "string" },
+        "siteDescription_en": { "type": "string" },
+        "siteKeywords_he": { "type": "string" },
+        "siteKeywords_en": { "type": "string" },
+        "siteOgImage": { "type": "string", "format": "uri" },
+        "primaryColor": { "type": "string" },
+        "secondaryColor": { "type": "string" },
+        "fontFamily": { "type": "string" },
+        "borderRadius": { "type": "string" },
+        "showHeroMarquee": { "type": "boolean" },
+        "heroMarqueeText": { "type": "string" },
+        "aiPromptLinks": { "type": "string" },
+        "aiPromptCategories": { "type": "string" },
+        "aiModel": { "type": "string" },
+        "affiliateUrlHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string" },
+              "timestamp": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile and role",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "lastLogin": { "type": "integer" }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": { "schema": "Category", "description": "Collection of link categories" },
+    "/links/{linkId}": { "schema": "Link", "description": "Collection of discovery links" },
+    "/settings/global": { "schema": "GlobalSettings", "description": "Global site settings" },
+    "/users/{userId}": { "schema": "User", "description": "User profiles and roles" }
+  }
+}

@@ -1,26 +1,105 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isAdmin() {
       return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "shay4383@gmail.com" && request.auth.token.email_verified == true));
     }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    function isValidOptionalString(field, minLen, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() >= minLen &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    function isValidUrl(url) {
+      return url is string &&
+        (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidCategory(data) {
+      return hasRequiredFields(['name_he', 'name_en', 'slug']) &&
+        hasOnlyAllowedFields(['name_he', 'name_en', 'slug', 'seoTitle_he', 'seoTitle_en', 'seoDescription_he', 'seoDescription_en', 'seoKeywords_he', 'seoKeywords_en']) &&
+        isValidString('name_he', 1, 100) &&
+        isValidString('name_en', 1, 100) &&
+        isValidString('slug', 1, 100) &&
+        isValidOptionalString('seoTitle_he', 0, 200) &&
+        isValidOptionalString('seoTitle_en', 0, 200);
+    }
+
+    function isValidLink(data) {
+      return hasRequiredFields(['categoryId', 'url', 'title_he', 'title_en', 'createdAt']) &&
+        hasOnlyAllowedFields(['categoryId', 'url', 'title_he', 'title_en', 'subtitle_he', 'subtitle_en', 'description_he', 'description_en', 'imageUrl', 'tags', 'clicks', 'createdAt', 'seoTitle_he', 'seoTitle_en', 'seoDescription_he', 'seoDescription_en', 'seoKeywords_he', 'seoKeywords_en']) &&
+        isValidString('categoryId', 1, 100) &&
+        isValidUrl(data.url) &&
+        isValidString('title_he', 1, 200) &&
+        isValidString('title_en', 1, 200) &&
+        data.createdAt is int &&
+        isValidOptionalString('imageUrl', 0, 1000) &&
+        isValidOptionalString('description_he', 0, 1000);
+    }
+
+    function isValidUser(data) {
+      return hasRequiredFields(['email', 'role']) &&
+        hasOnlyAllowedFields(['email', 'role', 'displayName', 'photoURL', 'lastLogin']) &&
+        isValidEmail(data.email) &&
+        data.role in ['admin', 'user'] &&
+        isValidOptionalString('displayName', 0, 100);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
 
     // Categories: Public read, Admin write
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidCategory(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Links: Public read, Admin write
     match /links/{linkId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin() && isValidLink(request.resource.data);
+      allow update: if isAdmin() && isValidLink(request.resource.data) && 
+        request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
     }
 
     // Settings: Public read, Admin write
@@ -31,8 +110,10 @@ service cloud.firestore {
 
     // Users: Owner read, Admin write
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && request.resource.data.role == 'user' && isValidUser(request.resource.data)) || isAdmin();
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role && isValidUser(request.resource.data)) || isAdmin();
+      allow delete: if isAdmin();
     }
   }
 }

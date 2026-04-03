@@ -22,6 +22,15 @@ const app = isFirebaseConfigured
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
+/**
+ * Get the current user's ID token for server-side authentication.
+ */
+export const getIdToken = async (): Promise<string | null> => {
+  const user = auth.currentUser;
+  if (!user) return null;
+  return await user.getIdToken();
+};
+
 // Use initializeFirestore with experimentalForceLongPolling to fix "client is offline" errors
 // in environments with restricted WebSocket/gRPC connections.
 export const db = isFirebaseConfigured 

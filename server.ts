@@ -179,6 +179,58 @@ app.post("/api/gemini/generate-category-info", async (req, res) => {
   }
 });
 
+app.post("/api/gemini/generate-seo-metadata", async (req, res) => {
+  try {
+    const { content, language } = req.body;
+    
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+    
+    if (!apiKey || apiKey.length < 30) {
+      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const prompt = `Generate SEO metadata (title, description, keywords) for the following content in ${language === 'he' ? 'Hebrew' : 'English'}:
+    Title: ${content.title}
+    Subtitle: ${content.subtitle || 'N/A'}
+    Description: ${content.description}
+    Tags: ${content.tags?.join(', ') || 'N/A'}
+
+    The title should be catchy and under 60 characters.
+    The description should be a summary under 160 characters.
+    The keywords should be a comma-separated list of 5-10 relevant terms.`;
+
+    const response = await ai.models.generateContent({
+      model: PRIMARY_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            keywords: { type: Type.STRING },
+          },
+          required: ["title", "description", "keywords"],
+        },
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    
+    res.json(JSON.parse(text));
+  } catch (error: any) {
+    console.error("Server Gemini SEO Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate SEO metadata" });
+  }
+});
+
 // Vite middleware for development (only run when not deployed on serverless)
 if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
   import("vite").then(({ createServer: createViteServer }) => {

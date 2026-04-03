@@ -22,54 +22,71 @@ export default function RedirectPage() {
   const [targetUrl, setTargetUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const url = searchParams.get('to');
-    if (!url || !linkId) {
-      addLog('warn', 'RedirectPage: Missing URL or linkId', { url, linkId });
-      navigate('/');
-      return;
-    }
-    const decodedUrl = decodeURIComponent(url);
-    setTargetUrl(decodedUrl);
-    addLog('info', 'RedirectPage: Starting redirection', { linkId, targetUrl: decodedUrl });
+    let timer: NodeJS.Timeout;
+    const loadLink = async () => {
+      if (!linkId) {
+        addLog('warn', 'RedirectPage: Missing linkId');
+        navigate('/');
+        return;
+      }
 
-    // 1. Fetch Affiliate URL & Trigger
-    const triggerAffiliate = async () => {
       try {
-        const settings = await settingsService.getGlobalSettings();
-        addLog('debug', 'RedirectPage: Triggering affiliate frame', { affiliateUrl: settings.affiliateUrl });
-        const affiliateFrame = document.createElement('iframe');
-        affiliateFrame.style.display = 'none';
-        affiliateFrame.src = settings.affiliateUrl;
-        document.body.appendChild(affiliateFrame);
-        
-        // Cleanup
-        setTimeout(() => {
-          if (document.body.contains(affiliateFrame)) {
-            document.body.removeChild(affiliateFrame);
+        const link = await linkService.getLinkById(linkId);
+        if (!link) {
+          addLog('warn', 'RedirectPage: Link not found', { linkId });
+          navigate('/');
+          return;
+        }
+
+        const decodedUrl = link.targetUrl;
+        setTargetUrl(decodedUrl);
+        addLog('info', 'RedirectPage: Starting redirection', { linkId, targetUrl: decodedUrl });
+
+        // 1. Fetch Affiliate URL & Trigger
+        const triggerAffiliate = async () => {
+          try {
+            const settings = await settingsService.getGlobalSettings();
+            addLog('debug', 'RedirectPage: Triggering affiliate frame', { affiliateUrl: settings.affiliateUrl });
+            const affiliateFrame = document.createElement('iframe');
+            affiliateFrame.style.display = 'none';
+            affiliateFrame.src = settings.affiliateUrl;
+            document.body.appendChild(affiliateFrame);
+            
+            // Cleanup
+            setTimeout(() => {
+              if (document.body.contains(affiliateFrame)) {
+                document.body.removeChild(affiliateFrame);
+              }
+            }, REDIRECT_DELAY_MS + 2000);
+          } catch (err) {
+            addLog('error', 'RedirectPage: Failed to load affiliate settings', { error: err });
+            console.error('Failed to load affiliate settings', err);
           }
-        }, REDIRECT_DELAY_MS + 2000);
+        };
+        
+        triggerAffiliate();
+
+        // 2. Analytics & Firestore Increment
+        linkService.incrementClicks(linkId);
+        analyticsService.logLinkClick(linkId, 'Redirecting...');
+
+        // 3. Final Redirect
+        timer = setTimeout(() => {
+          addLog('info', 'RedirectPage: Final redirecting now', { url: decodedUrl });
+          window.location.href = decodedUrl;
+        }, REDIRECT_DELAY_MS);
       } catch (err) {
-        addLog('error', 'RedirectPage: Failed to load affiliate settings', { error: err });
-        console.error('Failed to load affiliate settings', err);
+        addLog('error', 'RedirectPage: Failed to load link', { error: err });
+        navigate('/');
       }
     };
     
-    triggerAffiliate();
-
-    // 2. Analytics & Firestore Increment
-    linkService.incrementClicks(linkId);
-    analyticsService.logLinkClick(linkId, 'Redirecting...');
-
-    // 3. Final Redirect
-    const timer = setTimeout(() => {
-      addLog('info', 'RedirectPage: Final redirecting now', { url: decodedUrl });
-      window.location.href = decodedUrl;
-    }, REDIRECT_DELAY_MS);
+    loadLink();
 
     return () => {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     };
-  }, [linkId, searchParams, navigate, addLog]);
+  }, [linkId, navigate, addLog]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
