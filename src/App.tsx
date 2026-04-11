@@ -30,7 +30,7 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'redirect/:linkId', element: <RedirectPage /> },
+      { path: 'go/:linkId', element: <RedirectPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'coupons', element: <CouponsPage /> },
       { path: ADMIN_ROUTE_PATH, element: <AdminDashboard /> },

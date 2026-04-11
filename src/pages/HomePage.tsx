@@ -375,7 +375,7 @@ export default function HomePage() {
   };
 
   const handleShare = (linkId: string) => {
-    const shareUrl = `${window.location.origin}/redirect/${linkId}`;
+    const shareUrl = `${window.location.origin}/go/${linkId}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success(language === 'he' ? 'הקישור הועתק לשיתוף!' : 'Link copied for sharing!');
   };
@@ -555,7 +555,7 @@ export default function HomePage() {
                       link ? (
                         <a 
                           key={`${link.id}-${i}`}
-                          href={`/redirect/${link.id}?to=${encodeURIComponent(link.targetUrl)}`}
+                          href={`/go/${link.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="group relative block w-40 h-44 bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all shrink-0"
@@ -740,7 +740,7 @@ export default function HomePage() {
                         {groupLinks.map((link, index) => (
                           <motion.a
                             key={link.id}
-                            href={`/redirect/${link.id}?to=${encodeURIComponent(link.targetUrl)}`}
+                            href={`/go/${link.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             initial={{ opacity: 0, y: 20 }}

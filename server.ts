@@ -57,7 +57,7 @@ const serveWithMeta = async (req: express.Request, res: express.Response, next: 
         title = data.title_he || data.title_en || title;
         description = data.description_he || data.description_en || description;
         imageUrl = data.imageUrl || imageUrl;
-        url = `${url}/redirect/${linkId}`;
+        url = `${url}/go/${linkId}`;
       }
     } else if (categoryId) {
       const catDoc = await db.collection('categories').doc(categoryId).get();
@@ -104,7 +104,7 @@ const serveWithMeta = async (req: express.Request, res: express.Response, next: 
   }
 };
 
-app.get("/redirect/:linkId", serveWithMeta);
+app.get("/go/:linkId", serveWithMeta);
 app.get("/", (req, res, next) => {
   if (req.query.category) {
     return serveWithMeta(req, res, next);
