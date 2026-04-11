@@ -22,6 +22,7 @@ import { auth, db } from './services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuthStore } from './store/authStore';
 import { DebugPanel } from './components/DebugPanel';
+import { Toaster } from 'sonner';
 
 const router = createBrowserRouter([
   {
@@ -78,6 +79,7 @@ export default function App() {
   return (
     <HelmetProvider>
       <RouterProvider router={router} />
+      <Toaster position="top-center" richColors />
       <DebugPanel />
     </HelmetProvider>
   );

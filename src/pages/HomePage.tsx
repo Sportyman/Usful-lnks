@@ -11,10 +11,11 @@ import { useDataStore } from '../store/dataStore';
 import { useDebugStore } from '../store/debugStore';
 import { Button } from '../components/ui/Button';
 import { 
-  ExternalLink, Search, ArrowUpRight, Sparkles, Zap, Flame, ArrowLeft, ArrowRight, X, LayoutGrid
+  ExternalLink, Search, ArrowUpRight, Sparkles, Zap, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../utils/cn';
+import { toast } from 'sonner';
 
 // --- Components ---
 
@@ -373,6 +374,12 @@ export default function HomePage() {
     setSearchQuery('');
   };
 
+  const handleShare = (linkId: string) => {
+    const shareUrl = `${window.location.origin}/redirect/${linkId}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success(language === 'he' ? 'הקישור הועתק לשיתוף!' : 'Link copied for sharing!');
+  };
+
   // Colors for Bento Grid (cycling)
   const bentoColors = [
     "bg-primary", // Yellow (Primary)
@@ -561,6 +568,18 @@ export default function HomePage() {
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                               alt=""
                             />
+                            {/* Share Button Small */}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleShare(link.id);
+                              }}
+                              className="absolute top-1.5 right-1.5 z-20 p-1.5 bg-white/90 backdrop-blur-sm border border-black rounded-lg shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100"
+                              title={language === 'he' ? 'שתף' : 'Share'}
+                            >
+                              <Share2 className="w-3 h-3 text-black" />
+                            </button>
                           </div>
                           <div className="p-2 text-start">
                             <h3 className="font-bold text-[11px] leading-tight mb-0.5 line-clamp-1">
@@ -737,6 +756,20 @@ export default function HomePage() {
                                 alt=""
                                 referrerPolicy="no-referrer"
                               />
+                              
+                              {/* Share Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleShare(link.id);
+                                }}
+                                className="absolute top-3 right-3 z-20 p-2 bg-white/90 backdrop-blur-sm border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100"
+                                title={language === 'he' ? 'שתף קישור' : 'Share link'}
+                              >
+                                <Share2 className="w-3.5 h-3.5 text-black" />
+                              </button>
+
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                  <div className="bg-white text-black font-bold px-3 py-1 rounded-full border border-black transform -rotate-2 shadow-sm text-xs">
                                    {language === 'he' ? 'בקר באתר' : 'VISIT'}

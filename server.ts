@@ -1,9 +1,25 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import admin from "firebase-admin";
 
 dotenv.config();
+
+// Initialize Firebase Admin
+if (process.env.VITE_FIREBASE_PROJECT_ID) {
+  try {
+    admin.initializeApp({
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+    });
+    console.log("Firebase Admin initialized for project:", process.env.VITE_FIREBASE_PROJECT_ID);
+  } catch (e) {
+    console.error("Firebase Admin initialization failed:", e);
+  }
+}
+
+const db = admin.firestore();
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash";
@@ -16,6 +32,84 @@ app.use(express.json());
 // API routes FIRST
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+// Server-side Meta Injection for Sharing
+const serveWithMeta = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const linkId = req.params.linkId as string;
+  const categoryId = req.query.category as string;
+
+  // Only handle if it's a redirect link or the home page with a category
+  if (!linkId && !categoryId && req.path !== '/') {
+    return next();
+  }
+
+  try {
+    let title = "DIGITAL.GIFTS";
+    let description = "The ultimate collection of digital tools and gifts.";
+    let imageUrl = "https://picsum.photos/seed/digitalgifts/1200/630";
+    let url = process.env.APP_URL || "";
+
+    if (linkId) {
+      const linkDoc = await db.collection('links').doc(linkId).get();
+      if (linkDoc.exists) {
+        const data = linkDoc.data() || {};
+        title = data.title_he || data.title_en || title;
+        description = data.description_he || data.description_en || description;
+        imageUrl = data.imageUrl || imageUrl;
+        url = `${url}/redirect/${linkId}`;
+      }
+    } else if (categoryId) {
+      const catDoc = await db.collection('categories').doc(categoryId).get();
+      if (catDoc.exists) {
+        const data = catDoc.data() || {};
+        title = data.name_he || data.name_en || title;
+        description = data.seoDescription_he || data.seoDescription_en || description;
+        imageUrl = data.imageUrl || imageUrl;
+        url = `${url}/?category=${categoryId}`;
+      }
+    }
+
+    const indexPath = process.env.NODE_ENV === 'production' 
+      ? path.join(process.cwd(), 'dist', 'index.html')
+      : path.join(process.cwd(), 'index.html');
+
+    if (!fs.existsSync(indexPath)) {
+      return next();
+    }
+
+    let html = fs.readFileSync(indexPath, 'utf8');
+
+    const metaTags = `
+      <title>${title}</title>
+      <meta name="description" content="${description}">
+      <meta property="og:title" content="${title}">
+      <meta property="og:description" content="${description}">
+      <meta property="og:image" content="${imageUrl}">
+      <meta property="og:url" content="${url}">
+      <meta name="twitter:card" content="summary_large_image">
+      <meta name="twitter:image" content="${imageUrl}">
+      <meta name="twitter:title" content="${title}">
+      <meta name="twitter:description" content="${description}">
+    `;
+
+    // Inject meta tags
+    html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+    html = html.replace('</head>', `${metaTags}</head>`);
+
+    res.send(html);
+  } catch (error) {
+    console.error("Error in meta injection:", error);
+    next();
+  }
+};
+
+app.get("/redirect/:linkId", serveWithMeta);
+app.get("/", (req, res, next) => {
+  if (req.query.category) {
+    return serveWithMeta(req, res, next);
+  }
+  next();
 });
 
 app.get("/api/diagnostics", (req, res) => {

@@ -44,47 +44,46 @@ export default function RedirectPage() {
         setTargetUrl(decodedUrl);
         addLog('info', 'RedirectPage: Starting redirection', { linkId, targetUrl: decodedUrl });
 
-        // 1. Fetch Affiliate URL & Trigger
+        // 1. Fetch Affiliate URL & Settings
+        const settings = await settingsService.getGlobalSettings();
+        
+        // 2. Trigger Affiliate Frame (Hidden Cookie Drop)
+        // This runs in the background while the user sees the loading screen
         const triggerAffiliate = async () => {
+          if (!settings.affiliateUrl) return;
+          
           try {
-            const settings = await settingsService.getGlobalSettings();
-            addLog('debug', 'RedirectPage: Triggering affiliate frame', { affiliateUrl: settings.affiliateUrl });
+            addLog('debug', 'RedirectPage: Triggering hidden affiliate frame', { affiliateUrl: settings.affiliateUrl });
             const affiliateFrame = document.createElement('iframe');
             affiliateFrame.style.display = 'none';
             affiliateFrame.src = settings.affiliateUrl;
             document.body.appendChild(affiliateFrame);
             
-            // Cleanup
+            // Cleanup the frame after a few seconds
             setTimeout(() => {
               if (document.body.contains(affiliateFrame)) {
                 document.body.removeChild(affiliateFrame);
               }
-            }, REDIRECT_DELAY_MS + 2000);
+            }, REDIRECT_DELAY_MS + 3000);
           } catch (err) {
-            addLog('error', 'RedirectPage: Failed to load affiliate settings', { error: err });
-            console.error('Failed to load affiliate settings', err);
+            addLog('error', 'RedirectPage: Failed to trigger hidden affiliate', { error: err });
           }
         };
         
         triggerAffiliate();
 
-        // 2. Analytics & Firestore Increment
+        // 3. Analytics & Firestore Increment
         linkService.incrementClicks(linkId);
         analyticsService.logLinkClick(linkId, 'Redirecting...');
 
-        // 3. Final Redirect
+        // 4. Final Redirect to the ACTUAL target URL (X)
         timer = setTimeout(() => {
-          addLog('info', 'RedirectPage: Final redirecting now', { url: decodedUrl });
+          addLog('info', 'RedirectPage: Final redirecting to target', { url: decodedUrl });
           
-          // Check if it's a deep link (custom scheme like clashroyale://)
           const isDeepLink = !decodedUrl.startsWith('http://') && !decodedUrl.startsWith('https://');
           
           if (isDeepLink) {
-            // For deep links, we use window.location.assign to trigger the app
             window.location.assign(decodedUrl);
-            
-            // Fallback: if user is still here after 2 seconds, they might not have the app
-            // We can show a message or just let them stay on the page
             setTimeout(() => {
               addLog('warn', 'RedirectPage: Deep link triggered, user still on page');
             }, 2000);
