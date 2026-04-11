@@ -22,6 +22,11 @@ const app = isFirebaseConfigured
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
+// Force account selection on every login attempt
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
 /**
  * Get the current user's ID token for server-side authentication.
  */
