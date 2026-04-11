@@ -39,12 +39,16 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     imageZoom: initialData?.imageZoom && initialData.imageZoom < 10 ? initialData.imageZoom * 100 : initialData?.imageZoom || 100,
     textAlign: initialData?.textAlign || 'right',
     isComingSoon: initialData?.isComingSoon || false,
+    subtitle_he: initialData?.subtitle_he || '',
+    subtitle_en: initialData?.subtitle_en || '',
+    justifySubtitle: initialData?.justifySubtitle || false,
     seoTitle_he: initialData?.seoTitle_he || '',
     seoTitle_en: initialData?.seoTitle_en || '',
     seoDescription_he: initialData?.seoDescription_he || '',
     seoDescription_en: initialData?.seoDescription_en || '',
     seoKeywords_he: initialData?.seoKeywords_he || '',
     seoKeywords_en: initialData?.seoKeywords_en || '',
+    sourceContext: '',
   });
 
   const handleSeoGenerate = async (lang: 'he' | 'en') => {
@@ -86,7 +90,7 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     setIsGenerating(true);
     setAiError(null);
     try {
-      const result = await geminiService.generateCategoryInfo(inputName);
+      const result = await geminiService.generateCategoryInfo(inputName, formData.sourceContext);
       setFormData(prev => ({
         ...prev,
         ...result
@@ -109,6 +113,32 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
+          {/* Source Context Section */}
+          <div className="p-4 bg-accent-peach/5 rounded-2xl border-2 border-dashed border-accent-peach/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-widest text-accent-peach-darker">
+                {language === 'he' ? 'מידע נוסף / הקשר למחולל' : 'Additional Info / Context'}
+              </label>
+              <Sparkles className="w-4 h-4 text-accent-peach" />
+            </div>
+            <textarea
+              value={formData.sourceContext}
+              onChange={e => setFormData({ ...formData, sourceContext: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all h-24 text-sm shadow-sm"
+              placeholder={language === 'he' ? 'הדבק כאן פרטים על הקטגוריה או כל מידע שיעזור ל-AI לדייק' : 'Paste details about the category or any info to help the AI'}
+            />
+            <Button 
+              type="button" 
+              variant="primary" 
+              onClick={handleMagicGenerate}
+              isLoading={isGenerating}
+              className="w-full py-2.5 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <Wand2 className="w-4 h-4 mr-2" />
+              {language === 'he' ? 'חולל את כל השדות על בסיס המידע' : 'Generate All Fields Based on Info'}
+            </Button>
+          </div>
+
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
               {language === 'he' ? 'שם בעברית' : 'Name (Hebrew)'}
@@ -323,8 +353,47 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
           </div>
         </div>
 
-        {/* SEO Section */}
-        <div className="pt-4 border-t border-slate-100 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                {language === 'he' ? 'כותרת משנה בעברית' : 'Subtitle (Hebrew)'}
+              </label>
+              <input
+                type="text"
+                value={formData.subtitle_he}
+                onChange={e => setFormData({ ...formData, subtitle_he: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+                placeholder={language === 'he' ? 'טקסט קטן מתחת לכותרת' : 'Small text below title'}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                {language === 'he' ? 'כותרת משנה באנגלית' : 'Subtitle (English)'}
+              </label>
+              <input
+                type="text"
+                value={formData.subtitle_en}
+                onChange={e => setFormData({ ...formData, subtitle_en: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+                placeholder={language === 'he' ? 'Small text below title' : 'Small text below title'}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="justifySubtitle"
+              checked={formData.justifySubtitle}
+              onChange={e => setFormData({ ...formData, justifySubtitle: e.target.checked })}
+              className="w-5 h-5 rounded-lg border-slate-300 text-ink-900 focus:ring-accent-peach"
+            />
+            <label htmlFor="justifySubtitle" className="text-sm font-medium text-ink-700">
+              {language === 'he' ? 'יישור כותרת משנה לרוחב הכותרת (Justify)' : 'Justify subtitle to title width'}
+            </label>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 space-y-6">
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4 text-accent-peach-darker" />
               <h3 className="text-sm font-bold uppercase tracking-wider text-ink-900">
@@ -501,6 +570,20 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
               <h3 className="text-xl font-black uppercase leading-none mb-1">
                 {language === 'he' ? (formData.name_he || 'שם קטגוריה') : (formData.name_en || 'Category Name')}
               </h3>
+              {(language === 'he' ? formData.subtitle_he : formData.subtitle_en) && (
+                <p className={cn(
+                  "text-[10px] font-bold uppercase tracking-wider mb-1",
+                  formData.justifySubtitle ? "w-full flex justify-between" : ""
+                )}>
+                  {formData.justifySubtitle ? (
+                    (language === 'he' ? formData.subtitle_he : formData.subtitle_en)?.split('').map((char, i) => (
+                      <span key={i}>{char === ' ' ? '\u00A0' : char}</span>
+                    ))
+                  ) : (
+                    language === 'he' ? formData.subtitle_he : formData.subtitle_en
+                  )}
+                </p>
+              )}
               <div className="w-8 h-0.5 bg-white rounded-full" />
             </div>
           </div>

@@ -24,4 +24,5 @@ export const ADMIN_SHORTCUT = { ctrl: true, shift: true, alt: true, key: 'L' }; 
 export const DEFAULT_GEMINI_PROMPT = `Analyze this URL and generate a title and description in both Hebrew and English.
 Also, find a relevant high-quality image URL for this product or website.
 The content should be inviting and suitable for a "digital gifts" discovery website.
+CRITICAL: Prioritize extracting specific deals, rewards, or unique value propositions (e.g., "50k Gold", "20% Off").
 Keep titles short (max 5 words) and descriptions concise (max 15 words).`;

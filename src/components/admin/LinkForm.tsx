@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check, Search } from 'lucide-react';
+import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check, Search, Sparkles } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { generateSeoMetadata } from '../../services/seoService';
 import { cn } from '../../utils/cn';
@@ -67,6 +67,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     seoDescription_en: initialData?.seoDescription_en || '',
     seoKeywords_he: initialData?.seoKeywords_he || '',
     seoKeywords_en: initialData?.seoKeywords_en || '',
+    sourceContext: '',
   });
 
   // Reset image error when URL changes
@@ -111,7 +112,17 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
         return;
       }
 
-      const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt, specificField);
+      const context = [
+        formData.sourceContext,
+        formData.title_he,
+        formData.title_en,
+        formData.description_he,
+        formData.description_en,
+        formData.subtitle_he,
+        formData.subtitle_en
+      ].filter(Boolean).join(' | ');
+
+      const result = await geminiService.generateLinkInfo(formData.targetUrl, customPrompt, specificField, context);
       
       setFormData(prev => {
         const newData = { ...prev };
@@ -201,7 +212,36 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        {/* URL Section First */}
+        {/* Source Context Section - Moved to top for visibility */}
+        <div className="p-4 bg-accent-peach/5 rounded-2xl border-2 border-dashed border-accent-peach/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-bold uppercase tracking-widest text-accent-peach-darker">
+              {language === 'he' ? 'מידע נוסף / הקשר למחולל' : 'Additional Info / Context'}
+            </label>
+            <Sparkles className="w-4 h-4 text-accent-peach" />
+          </div>
+          <textarea
+            value={formData.sourceContext}
+            onChange={e => setFormData({ ...formData, sourceContext: e.target.value })}
+            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all h-24 text-sm shadow-sm"
+            placeholder={language === 'he' ? 'הדבק כאן פרטים על המבצע, טקסט מהאתר או כל מידע שיעזור ל-AI לדייק (למשל: "קופון ל-50 אלף זהב")' : 'Paste details about the deal, text from the site, or any info to help the AI (e.g., "Coupon for 50k gold")'}
+          />
+          <Button 
+            type="button" 
+            variant="primary" 
+            onClick={() => handleMagicGenerate()}
+            isLoading={isGenerating && !generatingField}
+            className="w-full py-2.5 text-xs font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <Wand2 className="w-4 h-4 mr-2" />
+            {language === 'he' ? 'חולל את כל השדות על בסיס המידע' : 'Generate All Fields Based on Info'}
+          </Button>
+          <p className="text-[9px] text-ink-400 text-center italic">
+            {language === 'he' ? 'המחולל ישתמש ב-URL ובמידע שכתבת כאן כדי למלא את כל הטופס' : 'The generator will use the URL and the info here to fill the entire form'}
+          </p>
+        </div>
+
+        {/* URL Section */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
             {language === 'he' ? 'כתובת יעד (URL)' : 'Target URL'}
@@ -238,7 +278,9 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
           <p className="mt-1.5 text-[10px] text-ink-500 italic">
             {language === 'he' ? 'הקישור החיצוני שאליו המשתמש יופנה. לחץ על המטה הקסם לייצור אוטומטי!' : 'The external link the user will be redirected to. Click the magic wand for auto-generation!'}
           </p>
-          {aiError && (
+        </div>
+
+        {aiError && (
             <div className="mt-3 p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200 whitespace-pre-wrap break-words relative group">
               <button
                 onClick={copyError}
@@ -287,7 +329,6 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
               )}
             </div>
           )}
-        </div>
 
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -506,7 +547,6 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             </div>
           </div>
         </div>
-        </div>
 
         {/* SEO Section */}
         <div className="pt-4 border-t border-slate-100">
@@ -648,8 +688,9 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
             {language === 'he' ? 'פעיל' : 'Active'}
           </label>
         </div>
+      </div>
 
-        <div className="flex gap-3 pt-4">
+      <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" isLoading={isLoading}>
           {language === 'he' ? 'שמור' : 'Save'}
         </Button>

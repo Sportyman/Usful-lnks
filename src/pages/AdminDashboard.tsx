@@ -13,7 +13,7 @@ import { bulkSeoService, BulkSeoProgress } from '../services/bulkSeoService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle, Shield } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import { useDebugStore } from '../store/debugStore';
 import { auth } from '../services/firebase';
@@ -23,6 +23,7 @@ import { TaskWindow } from '../components/ui/TaskWindow';
 import { CategoryForm } from '../components/admin/CategoryForm';
 import { LinkForm } from '../components/admin/LinkForm';
 import { PromptEditorTab } from '../components/admin/PromptEditorTab';
+import { UserManagementTab } from '../components/admin/UserManagementTab';
 import { useDataStore } from '../store/dataStore';
 import { cn } from '../utils/cn';
 import { AFFILIATE_BASE_URL } from '../config/constants';
@@ -70,7 +71,7 @@ export default function AdminDashboard() {
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [bulkSeoProgress, setBulkSeoProgress] = useState<BulkSeoProgress | null>(null);
   const [isBulkSeoRunning, setIsBulkSeoRunning] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics' | 'prompts'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'analytics' | 'settings' | 'diagnostics' | 'prompts' | 'users'>('content');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState<any>(null);
   const [isCopied, setIsCopied] = useState(false);
@@ -425,6 +426,7 @@ export default function AdminDashboard() {
           {[
             { id: 'content', label: language === 'he' ? 'תוכן' : 'Content', icon: ExternalLink },
             { id: 'analytics', label: language === 'he' ? 'נתונים' : 'Analytics', icon: BarChart2 },
+            { id: 'users', label: language === 'he' ? 'משתמשים' : 'Users', icon: Shield },
             { id: 'prompts', label: language === 'he' ? 'פרומפטים' : 'Prompts', icon: Wand2 },
             { id: 'settings', label: language === 'he' ? 'הגדרות' : 'Settings', icon: Settings },
             { id: 'diagnostics', label: language === 'he' ? 'אבחון' : 'Diagnostics', icon: Activity }
@@ -555,6 +557,13 @@ export default function AdminDashboard() {
         {activeTab === 'prompts' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <PromptEditorTab />
+          </div>
+        )}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <UserManagementTab />
           </div>
         )}
 

@@ -255,13 +255,36 @@ export default function HomePage() {
   }, [language, isRTL, addLog]);
 
   const filteredLinks = useMemo(() => {
-    return links.filter(link => {
+    const baseLinks = links.filter(link => {
       const matchesCategory = !selectedCategoryId || link.categoryId === selectedCategoryId;
       const title = language === 'he' ? link.title_he : link.title_en;
       const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
+
+    // Sort by date descending
+    return [...baseLinks].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
   }, [links, selectedCategoryId, searchQuery, language]);
+
+  // Group links by month/year for the category view
+  const groupedLinks = useMemo(() => {
+    if (!selectedCategoryId) return null;
+
+    const groups: { [key: string]: typeof filteredLinks } = {};
+    
+    filteredLinks.forEach(link => {
+      if (!link.createdAt) return;
+      const date = new Date(link.createdAt.seconds * 1000);
+      const month = date.toLocaleString(language === 'he' ? 'he-IL' : 'en-US', { month: 'long' });
+      const year = date.getFullYear();
+      const key = `${month} ${year}`;
+      
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(link);
+    });
+
+    return groups;
+  }, [filteredLinks, selectedCategoryId, language]);
 
   const newLinks = useMemo(() => {
     // Get the latest 10 items
@@ -616,10 +639,25 @@ export default function HomePage() {
                               cat.textAlign === 'center' ? "text-center" : 
                               "text-right"
                             )}>
-                              <h3 className="text-xl md:text-2xl font-black uppercase leading-[0.9] mb-2 group-hover:scale-105 transition-transform origin-bottom-right">
+                              <h3 className="text-xl md:text-2xl font-black uppercase leading-[0.9] mb-1 group-hover:scale-105 transition-transform origin-bottom-right">
                                 {language === 'he' ? cat.name_he : cat.name_en}
                               </h3>
                               
+                              {(language === 'he' ? cat.subtitle_he : cat.subtitle_en) && (
+                                <p className={cn(
+                                  "text-[10px] font-bold uppercase tracking-wider mb-2",
+                                  cat.justifySubtitle ? "w-full flex justify-between" : ""
+                                )}>
+                                  {cat.justifySubtitle ? (
+                                    (language === 'he' ? cat.subtitle_he : cat.subtitle_en)?.split('').map((char, i) => (
+                                      <span key={i}>{char === ' ' ? '\u00A0' : char}</span>
+                                    ))
+                                  ) : (
+                                    language === 'he' ? cat.subtitle_he : cat.subtitle_en
+                                  )}
+                                </p>
+                              )}
+
                               <div className={cn(
                                 "flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0",
                                 cat.textAlign === 'center' ? "justify-center" : 
@@ -669,68 +707,81 @@ export default function HomePage() {
                  </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredLinks.length > 0 ? (
-                  filteredLinks.map((link, index) => (
-                    <motion.a
-                      key={link.id}
-                      href={`/redirect/${link.id}?to=${encodeURIComponent(link.targetUrl)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="group bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col h-full"
-                      style={{ borderRadius: 'var(--global-radius, 24px)' }}
-                    >
-                      <div className="h-40 overflow-hidden border-b-2 border-black relative bg-gray-100">
-                        <img 
-                          src={link.imageUrl || `https://picsum.photos/seed/${link.id}/600/400`}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          alt=""
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                           <div className="bg-white text-black font-bold px-3 py-1 rounded-full border border-black transform -rotate-2 shadow-sm text-xs">
-                             {language === 'he' ? 'בקר באתר' : 'VISIT'}
-                           </div>
-                        </div>
-                      </div>
-                      
-                      <div className={cn(
-                        "p-4 flex-1 flex flex-col",
-                        link.textAlign === 'left' ? "text-left items-start" : 
-                        link.textAlign === 'center' ? "text-center items-center" : 
-                        "text-right items-end"
-                      )}>
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {link.tags?.slice(0, 3).map(tag => (
-                            <span key={tag} className="text-[9px] font-bold uppercase tracking-widest bg-gray-100 px-1.5 py-0.5 rounded border border-black/10">
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                        
-                        <h3 className="text-lg font-black leading-tight mb-1 group-hover:underline decoration-2 underline-offset-2">
-                          {language === 'he' ? link.title_he : link.title_en}
-                          {(language === 'he' ? link.subtitle_he : link.subtitle_en) && (
-                            <span className="text-sm font-bold text-[#FF6B6B] ms-2">
-                              - {language === 'he' ? link.subtitle_he : link.subtitle_en}
-                            </span>
-                          )}
+              <div className="space-y-12">
+                {groupedLinks ? (
+                  Object.entries(groupedLinks).map(([groupName, groupLinks]) => (
+                    <div key={groupName} className="space-y-6">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-sm font-black uppercase tracking-widest bg-black text-white px-3 py-1 rounded-md">
+                          {groupName}
                         </h3>
-                        
-                        <p className="text-xs font-medium text-gray-500 line-clamp-2 mb-3 flex-1">
-                          {language === 'he' ? link.description_he : link.description_en}
-                        </p>
-
-                        <div className="flex items-center justify-between pt-3 border-t border-black/5">
-                          <span className="text-[10px] font-bold text-gray-400">
-                             {new Date(link.createdAt?.seconds * 1000).toLocaleDateString()}
-                          </span>
-                          <ArrowUpRight className="w-4 h-4 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </div>
+                        <div className="h-px flex-1 bg-black/10" />
                       </div>
-                    </motion.a>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {groupLinks.map((link, index) => (
+                          <motion.a
+                            key={link.id}
+                            href={`/redirect/${link.id}?to=${encodeURIComponent(link.targetUrl)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="group bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col h-full"
+                            style={{ borderRadius: 'var(--global-radius, 24px)' }}
+                          >
+                            <div className="h-40 overflow-hidden border-b-2 border-black relative bg-gray-100">
+                              <img 
+                                src={link.imageUrl || `https://picsum.photos/seed/${link.id}/600/400`}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                alt=""
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                 <div className="bg-white text-black font-bold px-3 py-1 rounded-full border border-black transform -rotate-2 shadow-sm text-xs">
+                                   {language === 'he' ? 'בקר באתר' : 'VISIT'}
+                                 </div>
+                              </div>
+                            </div>
+                            
+                            <div className={cn(
+                              "p-4 flex-1 flex flex-col",
+                              link.textAlign === 'left' ? "text-left items-start" : 
+                              link.textAlign === 'center' ? "text-center items-center" : 
+                              "text-right items-end"
+                            )}>
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                {link.tags?.slice(0, 3).map(tag => (
+                                  <span key={tag} className="text-[9px] font-bold uppercase tracking-widest bg-gray-100 px-1.5 py-0.5 rounded border border-black/10">
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                              
+                              <h3 className="text-lg font-black leading-tight mb-1 group-hover:underline decoration-2 underline-offset-2">
+                                {language === 'he' ? link.title_he : link.title_en}
+                                {(language === 'he' ? link.subtitle_he : link.subtitle_en) && (
+                                  <span className="text-sm font-bold text-[#FF6B6B] ms-2">
+                                    - {language === 'he' ? link.subtitle_he : link.subtitle_en}
+                                  </span>
+                                )}
+                              </h3>
+                              
+                              <p className="text-xs font-medium text-gray-500 line-clamp-2 mb-3 flex-1">
+                                {language === 'he' ? link.description_he : link.description_en}
+                              </p>
+      
+                              <div className="flex items-center justify-between pt-3 border-t border-black/5">
+                                <span className="text-[10px] font-bold text-gray-400">
+                                   {new Date(link.createdAt?.seconds * 1000).toLocaleDateString()}
+                                </span>
+                                <ArrowUpRight className="w-4 h-4 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                              </div>
+                            </div>
+                          </motion.a>
+                        ))}
+                      </div>
+                    </div>
                   ))
                 ) : (
                   <div className="col-span-full py-12 text-center">

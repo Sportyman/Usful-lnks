@@ -3,12 +3,14 @@ import { getIdToken } from "./firebase";
 
 export const DEFAULT_LINK_PROMPT = `You are a professional SEO expert and content strategist. 
 Analyze this URL: {{url}}. 
+{{context}}
 Generate a high-converting, SEO-optimized title (max 4 words), a catchy subtitle (max 6 words), and a compelling description (max 20 words) in Hebrew and English. 
 Also, generate up to 5 relevant tags (short keywords) in Hebrew.
 
 Guidelines:
-- Title: Must be punchy and include the main keyword.
-- Subtitle: A magnetic one-liner that highlights the value proposition.
+- CRITICAL: Prioritize extracting specific deals, rewards, coupons, or unique value propositions mentioned in the source or context (e.g., "50k Gold", "20% Off", "Free Trial").
+- Title: Must be punchy and include the main keyword or the most attractive benefit.
+- Subtitle: A magnetic one-liner that highlights the core value proposition.
 - Description: Concise, persuasive, and optimized for click-through rate.
 - Tone: Professional yet inviting, suitable for a "digital gifts" and "lifestyle" discovery platform.
 - Language: Natural-sounding Hebrew and English.`;
@@ -27,7 +29,7 @@ const PRIMARY_MODEL = "gemini-3-flash-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash";
 
 export const geminiService = {
-  async generateLinkInfo(url: string, customPrompt?: string, specificField?: string) {
+  async generateLinkInfo(url: string, customPrompt?: string, specificField?: string, context?: string) {
     try {
       const settings = await settingsService.getGlobalSettings();
       
@@ -39,24 +41,26 @@ export const geminiService = {
       let promptTemplate = customPrompt || settings.aiPromptLinks || settings.aiPrompt || DEFAULT_LINK_PROMPT;
       
       if (specificField) {
+        const contextStr = context ? `Context provided: "${context}". ` : '';
         if (specificField === 'tags') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate 5 relevant tags (keywords) in Hebrew.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate 5 relevant tags (keywords) in Hebrew.`;
         } else if (specificField === 'title_he') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate a concise title (max 6 words) in Hebrew.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate a concise title (max 6 words) in Hebrew. Focus on the main benefit.`;
         } else if (specificField === 'title_en') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate a concise title (max 6 words) in English.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate a concise title (max 6 words) in English. Focus on the main benefit.`;
         } else if (specificField === 'description_he') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate a concise description (max 20 words) in Hebrew.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate a concise description (max 20 words) in Hebrew. Include specific rewards/deals if mentioned.`;
         } else if (specificField === 'description_en') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate a concise description (max 20 words) in English.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate a concise description (max 20 words) in English. Include specific rewards/deals if mentioned.`;
         } else if (specificField === 'subtitle_he') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate a short subtitle (max 6 words) in Hebrew.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate a short subtitle (max 6 words) in Hebrew. Highlight the value proposition.`;
         } else if (specificField === 'subtitle_en') {
-          promptTemplate = `Analyze this URL: {{url}}. Generate a short subtitle (max 6 words) in English.`;
+          promptTemplate = `Analyze this URL: {{url}}. ${contextStr}Generate a short subtitle (max 6 words) in English. Highlight the value proposition.`;
         }
       }
 
-      const finalPrompt = promptTemplate.replace('{{url}}', url);
+      let finalPrompt = promptTemplate.replace('{{url}}', url);
+      finalPrompt = finalPrompt.replace('{{context}}', context ? `Context provided by user: "${context}". Use this information to prioritize the most relevant rewards or deals.` : '');
       
       // Use user-selected model or default to PRIMARY
       const selectedModel = settings.aiModel || PRIMARY_MODEL;
@@ -121,11 +125,16 @@ export const geminiService = {
     return await response.json();
   },
 
-  async generateCategoryInfo(inputName: string) {
+  async generateCategoryInfo(inputName: string, context?: string) {
     try {
       const settings = await settingsService.getGlobalSettings();
       const promptTemplate = settings.aiPromptCategories || DEFAULT_CATEGORY_PROMPT;
-      const finalPrompt = promptTemplate.replace('{{name}}', inputName);
+      let finalPrompt = promptTemplate.replace('{{name}}', inputName);
+      
+      if (context) {
+        finalPrompt += `\n\nAdditional Context: "${context}". Use this information to refine the SEO titles and descriptions.`;
+      }
+
       const selectedModel = settings.aiModel || PRIMARY_MODEL;
 
       const idToken = await getIdToken();

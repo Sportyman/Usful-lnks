@@ -17,6 +17,9 @@ export interface Category {
   imageZoom?: number;
   textAlign?: 'right' | 'left' | 'center';
   isComingSoon?: boolean;
+  subtitle_he?: string;
+  subtitle_en?: string;
+  justifySubtitle?: boolean;
   seoTitle_he?: string;
   seoTitle_en?: string;
   seoDescription_he?: string;

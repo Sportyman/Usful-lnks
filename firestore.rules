@@ -11,7 +11,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && 
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "shay4383@gmail.com" && request.auth.token.email_verified == true));
+         (hashing.sha256(request.auth.token.email.toUtf8()).toHexString() == "7d69fe941774c313132ead5e45f8150768dad3257a0f57a1a4b412a2c95030fe" && request.auth.token.email_verified == true));
     }
 
     function isOwner(userId) {
