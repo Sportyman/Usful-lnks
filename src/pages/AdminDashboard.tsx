@@ -17,6 +17,7 @@ import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings
 import { useLanguageStore } from '../store/languageStore';
 import { useDebugStore } from '../store/debugStore';
 import { useClientIp } from '../hooks/useClientIp';
+import { geminiService } from '../services/geminiService';
 import { auth } from '../services/firebase';
 import { Link } from 'react-router-dom';
 import { Modal } from '../components/ui/Modal';
@@ -86,6 +87,21 @@ export default function AdminDashboard() {
 
   const { showDebugButton, setShowDebugButton } = useDebugStore();
   const { ip: currentClientIp } = useClientIp();
+
+  const [isGeneratingLegal, setIsGeneratingLegal] = useState<string | null>(null);
+
+  const handleGenerateLegal = async (type: string, lang: 'he' | 'en', field: keyof GlobalSettings) => {
+    setIsGeneratingLegal(`${type}_${lang}`);
+    try {
+      const content = await geminiService.generateLegalContent(type, lang);
+      setSettings(prev => ({ ...prev, [field]: content }));
+      toast.success(language === 'he' ? 'המסמך נוצר בהצלחה!' : 'Document generated successfully!');
+    } catch (error: any) {
+      toast.error(language === 'he' ? 'שגיאה ביצירת המסמך' : 'Error generating document');
+    } finally {
+      setIsGeneratingLegal(null);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -315,9 +331,7 @@ export default function AdminDashboard() {
     settings.termsOfUse_he !== originalSettings.termsOfUse_he ||
     settings.termsOfUse_en !== originalSettings.termsOfUse_en ||
     settings.accessibility_he !== originalSettings.accessibility_he ||
-    settings.accessibility_en !== originalSettings.accessibility_en ||
-    settings.affiliateDisclosure_he !== originalSettings.affiliateDisclosure_he ||
-    settings.affiliateDisclosure_en !== originalSettings.affiliateDisclosure_en;
+    settings.accessibility_en !== originalSettings.accessibility_en;
 
   const renderBulkSeoSection = () => (
     <div className={cn(
@@ -1013,9 +1027,33 @@ export default function AdminDashboard() {
               <div className="space-y-8">
                 {/* Privacy Policy */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
-                    {language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}
-                  </h4>
+                  <div className="flex items-center justify-between border-b border-black/5 pb-1">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400">
+                      {language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}
+                    </h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="xs" 
+                        variant="secondary"
+                        onClick={() => handleGenerateLegal('Privacy Policy', 'he', 'privacyPolicy_he')}
+                        isLoading={isGeneratingLegal === 'Privacy Policy_he'}
+                        className="text-[9px] h-6"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        {language === 'he' ? 'צור בעברית' : 'Gen Hebrew'}
+                      </Button>
+                      <Button 
+                        size="xs" 
+                        variant="secondary"
+                        onClick={() => handleGenerateLegal('Privacy Policy', 'en', 'privacyPolicy_en')}
+                        isLoading={isGeneratingLegal === 'Privacy Policy_en'}
+                        className="text-[9px] h-6"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        {language === 'he' ? 'צור באנגלית' : 'Gen English'}
+                      </Button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <textarea
                       placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
@@ -1034,9 +1072,33 @@ export default function AdminDashboard() {
 
                 {/* Terms of Use */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
-                    {language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}
-                  </h4>
+                  <div className="flex items-center justify-between border-b border-black/5 pb-1">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400">
+                      {language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}
+                    </h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="xs" 
+                        variant="secondary"
+                        onClick={() => handleGenerateLegal('Terms of Use', 'he', 'termsOfUse_he')}
+                        isLoading={isGeneratingLegal === 'Terms of Use_he'}
+                        className="text-[9px] h-6"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        {language === 'he' ? 'צור בעברית' : 'Gen Hebrew'}
+                      </Button>
+                      <Button 
+                        size="xs" 
+                        variant="secondary"
+                        onClick={() => handleGenerateLegal('Terms of Use', 'en', 'termsOfUse_en')}
+                        isLoading={isGeneratingLegal === 'Terms of Use_en'}
+                        className="text-[9px] h-6"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        {language === 'he' ? 'צור באנגלית' : 'Gen English'}
+                      </Button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <textarea
                       placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
@@ -1055,9 +1117,33 @@ export default function AdminDashboard() {
 
                 {/* Accessibility */}
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
-                    {language === 'he' ? 'הצהרת נגישות' : 'Accessibility Statement'}
-                  </h4>
+                  <div className="flex items-center justify-between border-b border-black/5 pb-1">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400">
+                      {language === 'he' ? 'הצהרת נגישות' : 'Accessibility Statement'}
+                    </h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="xs" 
+                        variant="secondary"
+                        onClick={() => handleGenerateLegal('Accessibility Statement', 'he', 'accessibility_he')}
+                        isLoading={isGeneratingLegal === 'Accessibility Statement_he'}
+                        className="text-[9px] h-6"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        {language === 'he' ? 'צור בעברית' : 'Gen Hebrew'}
+                      </Button>
+                      <Button 
+                        size="xs" 
+                        variant="secondary"
+                        onClick={() => handleGenerateLegal('Accessibility Statement', 'en', 'accessibility_en')}
+                        isLoading={isGeneratingLegal === 'Accessibility Statement_en'}
+                        className="text-[9px] h-6"
+                      >
+                        <Wand2 className="w-3 h-3 mr-1" />
+                        {language === 'he' ? 'צור באנגלית' : 'Gen English'}
+                      </Button>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <textarea
                       placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
@@ -1069,27 +1155,6 @@ export default function AdminDashboard() {
                       placeholder={language === 'he' ? 'אנגלית...' : 'English...'}
                       value={settings.accessibility_en || ''}
                       onChange={(e) => setSettings({ ...settings, accessibility_en: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
-                    />
-                  </div>
-                </div>
-
-                {/* Affiliate Disclosure */}
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
-                    {language === 'he' ? 'גילוי נאות שותפים' : 'Affiliate Disclosure'}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <textarea
-                      placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
-                      value={settings.affiliateDisclosure_he || ''}
-                      onChange={(e) => setSettings({ ...settings, affiliateDisclosure_he: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
-                    />
-                    <textarea
-                      placeholder={language === 'he' ? 'אנגלית...' : 'English...'}
-                      value={settings.affiliateDisclosure_en || ''}
-                      onChange={(e) => setSettings({ ...settings, affiliateDisclosure_en: e.target.value })}
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
                     />
                   </div>

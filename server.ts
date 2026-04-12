@@ -357,6 +357,60 @@ app.post("/api/gemini/generate-seo-metadata", async (req, res) => {
   }
 });
 
+app.post("/api/gemini/generate-legal-content", async (req, res) => {
+  try {
+    const { type, language } = req.body;
+    
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+    
+    if (!apiKey || apiKey.length < 30) {
+      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const prompt = `You are an expert legal advisor specializing in Israeli law and digital regulations.
+    Generate a thorough, detailed, and legally compliant ${type} document for a website named "DIGITAL.GIFTS".
+    The website is a discovery platform for digital tools, gifts, and affiliate deals.
+    The document must be in ${language === 'he' ? 'Hebrew' : 'English'}.
+    
+    Guidelines:
+    - Focus on Israeli law (Privacy Protection Law, Accessibility Law, Consumer Protection Law).
+    - Make it professional, clear, and comprehensive.
+    - Use appropriate legal terminology.
+    - Include placeholders like [NAME], [EMAIL], [DATE] where specific details are needed.
+    - For Accessibility: Mention that the site aims to comply with WCAG 2.1 Level AA.
+    - For Privacy: Mention data collection via cookies and Microsoft Clarity.
+    - For Terms: Include limitation of liability for external links.`;
+
+    const response = await ai.models.generateContent({
+      model: PRIMARY_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            content: { type: Type.STRING },
+          },
+          required: ["content"],
+        },
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    
+    res.json(JSON.parse(text));
+  } catch (error: any) {
+    console.error("Server Gemini Legal Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate legal content" });
+  }
+});
+
 // Vite middleware for development (only run when not deployed on serverless)
 if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
   import("vite").then(({ createServer: createViteServer }) => {

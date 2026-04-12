@@ -64,8 +64,7 @@ export function Footer() {
           {[
             { id: 'privacy', label: language === 'he' ? 'פרטיות' : 'Privacy' },
             { id: 'terms', label: language === 'he' ? 'תנאים' : 'Terms' },
-            { id: 'accessibility', label: language === 'he' ? 'נגישות' : 'Accessibility' },
-            { id: 'disclosure', label: language === 'he' ? 'גילוי נאות' : 'Disclosure' }
+            { id: 'accessibility', label: language === 'he' ? 'נגישות' : 'Accessibility' }
           ].map(link => (
             <Link 
               key={link.id} 

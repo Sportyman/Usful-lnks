@@ -163,6 +163,31 @@ export const geminiService = {
     }
   },
 
+  async generateLegalContent(type: string, language: 'he' | 'en') {
+    try {
+      const idToken = await getIdToken();
+      const response = await fetch('/api/gemini/generate-legal-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+        },
+        body: JSON.stringify({ type, language })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.content;
+    } catch (error) {
+      console.error("Gemini Legal Error:", error);
+      throw error;
+    }
+  },
+
   async fetchOgImage(url: string) {
     try {
       const idToken = await getIdToken();

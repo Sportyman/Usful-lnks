@@ -87,8 +87,6 @@ export interface GlobalSettings {
   termsOfUse_en?: string;
   accessibility_he?: string;
   accessibility_en?: string;
-  affiliateDisclosure_he?: string;
-  affiliateDisclosure_en?: string;
 }
 
 declare global {

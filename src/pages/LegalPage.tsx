@@ -38,10 +38,6 @@ export default function LegalPage() {
         setTitle(language === 'he' ? 'הצהרת נגישות' : 'Accessibility Statement');
         setContent(language === 'he' ? settings.accessibility_he || '' : settings.accessibility_en || '');
         break;
-      case 'disclosure':
-        setTitle(language === 'he' ? 'גילוי נאות' : 'Affiliate Disclosure');
-        setContent(language === 'he' ? settings.affiliateDisclosure_he || '' : settings.affiliateDisclosure_en || '');
-        break;
       default:
         setTitle('');
         setContent('');
@@ -53,7 +49,6 @@ export default function LegalPage() {
       case 'privacy': return <Shield className="w-8 h-8 text-accent-peach" />;
       case 'terms': return <FileText className="w-8 h-8 text-accent-peach" />;
       case 'accessibility': return <Accessibility className="w-8 h-8 text-accent-peach" />;
-      case 'disclosure': return <Info className="w-8 h-8 text-accent-peach" />;
       default: return null;
     }
   };

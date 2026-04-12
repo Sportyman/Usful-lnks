@@ -73,8 +73,6 @@
         "termsOfUse_en": { "type": "string" },
         "accessibility_he": { "type": "string" },
         "accessibility_en": { "type": "string" },
-        "affiliateDisclosure_he": { "type": "string" },
-        "affiliateDisclosure_en": { "type": "string" },
         "affiliateUrlHistory": {
           "type": "array",
           "items": {
