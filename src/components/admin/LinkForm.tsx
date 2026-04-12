@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, Category } from '../../types';
 import { Button } from '../ui/Button';
 import { useLanguageStore } from '../../store/languageStore';
-import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check, Search, Sparkles } from 'lucide-react';
+import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check, Search, Sparkles, RefreshCw } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { generateSeoMetadata } from '../../services/seoService';
 import { cn } from '../../utils/cn';
@@ -182,6 +182,20 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     setTagInput('');
   };
 
+  const generateAutoSlug = () => {
+    const base = formData.title_en || formData.title_he || '';
+    if (!base) return;
+    
+    const slug = base
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove non-word chars
+      .replace(/[\s_-]+/g, '-') // Replace spaces/underscores with -
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing -
+    
+    setFormData(prev => ({ ...prev, customSlug: slug }));
+  };
+
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
@@ -284,6 +298,15 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
                   placeholder="my-deal"
                 />
               </div>
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={generateAutoSlug}
+                className="px-3"
+                title={language === 'he' ? 'חולל אוטומטית' : 'Auto-generate'}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>

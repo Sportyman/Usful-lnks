@@ -82,8 +82,8 @@ const serveWithMeta = async (req: express.Request, res: express.Response, next: 
         }
 
         if (data) {
-          title = data.title_he || data.title_en || title;
-          description = data.description_he || data.description_en || description;
+          title = data.seoTitle_he || data.seoTitle_en || data.title_he || data.title_en || title;
+          description = data.seoDescription_he || data.seoDescription_en || data.description_he || data.description_en || description;
           imageUrl = data.imageUrl || imageUrl;
           url = `${url}/go/${linkId}`;
         }
