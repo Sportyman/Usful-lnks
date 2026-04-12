@@ -24,6 +24,7 @@ export default function RedirectPage() {
   const { addLog } = useDebugStore();
   const [targetUrl, setTargetUrl] = useState<string | null>(null);
   const [linkData, setLinkData] = useState<LinkType | null>(null);
+  const [isFetching, setIsFetching] = useState(true);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -35,6 +36,7 @@ export default function RedirectPage() {
       }
 
       try {
+        setIsFetching(true);
         // Try to find by ID first, then by custom slug
         let link = await linkService.getLinkById(linkId);
         
@@ -50,6 +52,7 @@ export default function RedirectPage() {
         }
 
         setLinkData(link);
+        setIsFetching(false);
         const decodedUrl = link.targetUrl;
         setTargetUrl(decodedUrl);
         addLog('info', 'RedirectPage: Starting redirection', { linkId: link.id, targetUrl: decodedUrl });
@@ -126,25 +129,31 @@ export default function RedirectPage() {
         {/* Decorative background */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#FFD23F] via-[#F27D26] to-[#FF6B6B]" />
         
-        <div className="mb-8 relative">
-          {linkData?.imageUrl ? (
+        <div className="mb-8 relative min-h-[180px] flex items-center justify-center">
+          {isFetching ? (
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-24 h-24 bg-gray-100 rounded-[2rem] border-4 border-dashed border-gray-200"
+            />
+          ) : linkData?.imageUrl ? (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               className="relative inline-block"
             >
               <img 
                 src={linkData.imageUrl} 
                 alt={language === 'he' ? linkData.title_he : linkData.title_en}
-                className="w-32 h-32 object-cover mx-auto rounded-[2rem] border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+                className="w-44 h-44 object-cover mx-auto rounded-[2.5rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
                 referrerPolicy="no-referrer"
               />
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -bottom-2 -right-2 bg-green-500 border-2 border-black rounded-full p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                className="absolute -bottom-2 -right-2 bg-green-500 border-2 border-black rounded-full p-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
               >
-                <ShieldCheck className="w-4 h-4 text-white" />
+                <ShieldCheck className="w-5 h-5 text-white" />
               </motion.div>
             </motion.div>
           ) : (
