@@ -12,8 +12,9 @@ import { linkService } from '../services/linkService';
 import { settingsService } from '../services/settingsService';
 import { analyticsService } from '../services/analyticsService';
 import { REDIRECT_DELAY_MS } from '../config/constants';
+import { Link as LinkType } from '../types';
 
-import { Zap, Sparkles, ExternalLink } from 'lucide-react';
+import { Zap, Sparkles, ExternalLink, ShieldCheck } from 'lucide-react';
 
 export default function RedirectPage() {
   const { linkId } = useParams();
@@ -22,6 +23,7 @@ export default function RedirectPage() {
   const { language } = useLanguageStore();
   const { addLog } = useDebugStore();
   const [targetUrl, setTargetUrl] = useState<string | null>(null);
+  const [linkData, setLinkData] = useState<LinkType | null>(null);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -47,6 +49,7 @@ export default function RedirectPage() {
           return;
         }
 
+        setLinkData(link);
         const decodedUrl = link.targetUrl;
         setTargetUrl(decodedUrl);
         addLog('info', 'RedirectPage: Starting redirection', { linkId: link.id, targetUrl: decodedUrl });
@@ -124,29 +127,61 @@ export default function RedirectPage() {
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#FFD23F] via-[#F27D26] to-[#FF6B6B]" />
         
         <div className="mb-8 relative">
-          <motion.div
-            animate={{ 
-              rotate: [0, 10, -10, 0],
-              scale: [1, 1.1, 1]
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-20 h-20 bg-[#FFD23F] border-4 border-black rounded-2xl flex items-center justify-center mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-          >
-            <Zap className="w-10 h-10 text-black fill-black" />
-          </motion.div>
-          
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#F27D26] border-2 border-black rounded-full flex items-center justify-center animate-bounce">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
+          {linkData?.imageUrl ? (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="relative inline-block"
+            >
+              <img 
+                src={linkData.imageUrl} 
+                alt={language === 'he' ? linkData.title_he : linkData.title_en}
+                className="w-32 h-32 object-cover mx-auto rounded-[2rem] border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+                referrerPolicy="no-referrer"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute -bottom-2 -right-2 bg-green-500 border-2 border-black rounded-full p-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <ShieldCheck className="w-4 h-4 text-white" />
+              </motion.div>
+            </motion.div>
+          ) : (
+            <>
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-20 h-20 bg-[#FFD23F] border-4 border-black rounded-2xl flex items-center justify-center mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <Zap className="w-10 h-10 text-black fill-black" />
+              </motion.div>
+              
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#F27D26] border-2 border-black rounded-full flex items-center justify-center animate-bounce">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+            </>
+          )}
         </div>
 
-        <h1 className="text-3xl font-black uppercase tracking-tight mb-4 leading-tight">
-          {isDeepLink 
-            ? (language === 'he' ? 'פותח את האפליקציה...' : 'Opening the app...')
-            : (language === 'he' ? 'מעביר אותך ליעד...' : 'Redirecting you...')}
+        <h1 className="text-2xl font-black uppercase tracking-tight mb-2 leading-tight">
+          {linkData ? (language === 'he' ? linkData.title_he : linkData.title_en) : (
+            isDeepLink 
+              ? (language === 'he' ? 'פותח את האפליקציה...' : 'Opening the app...')
+              : (language === 'he' ? 'מעביר אותך ליעד...' : 'Redirecting you...')
+          )}
         </h1>
+
+        {linkData && (
+          <p className="text-xs font-bold text-accent-peach-darker uppercase tracking-widest mb-4">
+            {language === 'he' ? 'מעביר אותך בבטחה...' : 'Redirecting you safely...'}
+          </p>
+        )}
         
-        <p className="text-gray-500 font-medium mb-8">
+        <p className="text-gray-500 text-sm font-medium mb-8 px-4">
           {isDeepLink
             ? (language === 'he' ? 'אנחנו מפעילים את האפליקציה עבורך. תודה על הסבלנות!' : 'We are launching the app for you. Thanks for your patience!')
             : (language === 'he' ? 'אנחנו מכינים את הקישור עבורך. תודה על הסבלנות!' : 'We are preparing the link for you. Thanks for your patience!')}
