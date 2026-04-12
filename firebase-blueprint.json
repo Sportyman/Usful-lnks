@@ -13,7 +13,8 @@
         "seoDescription_he": { "type": "string" },
         "seoDescription_en": { "type": "string" },
         "seoKeywords_he": { "type": "string" },
-        "seoKeywords_en": { "type": "string" }
+        "seoKeywords_en": { "type": "string" },
+        "slugFormat": { "type": "string", "description": "Format for auto-generating link slugs (e.g. 'clashgift-')" }
       },
       "required": ["name_he", "name_en", "slug"]
     },

@@ -48,6 +48,7 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
     seoDescription_en: initialData?.seoDescription_en || '',
     seoKeywords_he: initialData?.seoKeywords_he || '',
     seoKeywords_en: initialData?.seoKeywords_en || '',
+    slugFormat: initialData?.slugFormat || '',
     sourceContext: '',
   });
 
@@ -220,6 +221,21 @@ export function CategoryForm({ initialData, onSubmit, onCancel, isLoading }: Cat
               onChange={e => setFormData({ ...formData, slug: e.target.value })}
               className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
             />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'פורמט קישור אוטומטי (למשל: clashgift-)' : 'Auto-slug Format (e.g. clashgift-)'}
+            </label>
+            <input
+              type="text"
+              value={formData.slugFormat}
+              onChange={e => setFormData({ ...formData, slugFormat: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+              placeholder="clashgift-"
+            />
+            <p className="mt-1.5 text-[10px] text-ink-500 italic">
+              {language === 'he' ? 'אם תגדיר פורמט, המערכת תציע קישור אוטומטי (למשל clashgift-01) בכל פעם שתוסיף קישור לקטגוריה זו.' : 'If set, the system will suggest an auto-slug (e.g. clashgift-01) whenever you add a link to this category.'}
+            </p>
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">

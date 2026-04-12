@@ -5,6 +5,7 @@ import { useLanguageStore } from '../../store/languageStore';
 import { Wand2, ClipboardPaste, X, Plus, Loader2, Copy, Check, Search, Sparkles, RefreshCw } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { generateSeoMetadata } from '../../services/seoService';
+import { linkService } from '../../services/linkService';
 import { cn } from '../../utils/cn';
 
 interface LinkFormProps {
@@ -75,6 +76,40 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
   React.useEffect(() => {
     setImageError(false);
   }, [formData.imageUrl]);
+
+  // Auto-suggest slug when category changes
+  React.useEffect(() => {
+    const suggestSlug = async () => {
+      // Only suggest for new links or if slug is empty
+      if (initialData?.id || formData.customSlug) return;
+
+      const category = categories.find(c => c.id === formData.categoryId);
+      if (!category?.slugFormat) return;
+
+      try {
+        const links = await linkService.getLinksByCategory(formData.categoryId, false);
+        const format = category.slugFormat; // e.g. "clashgift-"
+        
+        // Find links that match the format
+        const matchingLinks = links
+          .filter(l => l.customSlug?.startsWith(format))
+          .map(l => {
+            const numPart = l.customSlug?.slice(format.length);
+            return parseInt(numPart || '0');
+          })
+          .filter(n => !isNaN(n));
+
+        const nextNum = matchingLinks.length > 0 ? Math.max(...matchingLinks) + 1 : 1;
+        const nextSlug = `${format}${nextNum.toString().padStart(2, '0')}`;
+        
+        setFormData(prev => ({ ...prev, customSlug: nextSlug }));
+      } catch (error) {
+        console.error('Error suggesting slug:', error);
+      }
+    };
+
+    suggestSlug();
+  }, [formData.categoryId, categories, initialData?.id]);
 
   const handleMagicGenerate = async (specificField?: string) => {
     if (!formData.targetUrl) {
@@ -182,7 +217,29 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     setTagInput('');
   };
 
-  const generateAutoSlug = () => {
+  const generateAutoSlug = async () => {
+    const category = categories.find(c => c.id === formData.categoryId);
+    if (category?.slugFormat) {
+      try {
+        const links = await linkService.getLinksByCategory(formData.categoryId, false);
+        const format = category.slugFormat;
+        const matchingLinks = links
+          .filter(l => l.customSlug?.startsWith(format))
+          .map(l => {
+            const numPart = l.customSlug?.slice(format.length);
+            return parseInt(numPart || '0');
+          })
+          .filter(n => !isNaN(n));
+
+        const nextNum = matchingLinks.length > 0 ? Math.max(...matchingLinks) + 1 : 1;
+        const nextSlug = `${format}${nextNum.toString().padStart(2, '0')}`;
+        setFormData(prev => ({ ...prev, customSlug: nextSlug }));
+        return;
+      } catch (error) {
+        console.error('Error generating format slug:', error);
+      }
+    }
+
     const base = formData.title_en || formData.title_he || '';
     if (!base) return;
     

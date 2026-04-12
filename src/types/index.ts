@@ -26,6 +26,7 @@ export interface Category {
   seoDescription_en?: string;
   seoKeywords_he?: string;
   seoKeywords_en?: string;
+  slugFormat?: string;
 }
 
 export interface Link {
