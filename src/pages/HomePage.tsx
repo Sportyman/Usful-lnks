@@ -16,6 +16,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { toast } from 'sonner';
+import { Link } from '../types';
 
 // --- Components ---
 
@@ -374,8 +375,9 @@ export default function HomePage() {
     setSearchQuery('');
   };
 
-  const handleShare = (linkId: string) => {
-    const shareUrl = `${window.location.origin}/go/${linkId}`;
+  const handleShare = (link: Link) => {
+    const slug = link.customSlug || link.id;
+    const shareUrl = `${window.location.origin}/go/${slug}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success(language === 'he' ? 'הקישור הועתק לשיתוף!' : 'Link copied for sharing!');
   };
@@ -573,7 +575,7 @@ export default function HomePage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleShare(link.id);
+                                handleShare(link);
                               }}
                               className="absolute top-1.5 right-1.5 z-20 p-1.5 bg-white/90 backdrop-blur-sm border border-black rounded-lg shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100"
                               title={language === 'he' ? 'שתף' : 'Share'}
@@ -762,7 +764,7 @@ export default function HomePage() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleShare(link.id);
+                                  handleShare(link);
                                 }}
                                 className="absolute top-3 right-3 z-20 p-2 bg-white/90 backdrop-blur-sm border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100"
                                 title={language === 'he' ? 'שתף קישור' : 'Share link'}

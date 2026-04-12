@@ -15,6 +15,7 @@ import RedirectPage from './pages/RedirectPage';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CouponsPage from './pages/CouponsPage';
+import LegalPage from './pages/LegalPage';
 import { ADMIN_ROUTE_PATH } from './config/constants';
 import { useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -33,6 +34,11 @@ const router = createBrowserRouter([
       { path: 'go/:linkId', element: <RedirectPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'coupons', element: <CouponsPage /> },
+      { path: 'legal/:type', element: <LegalPage /> },
+      { path: 'privacy', element: <Navigate to="/legal/privacy" replace /> },
+      { path: 'terms', element: <Navigate to="/legal/terms" replace /> },
+      { path: 'accessibility', element: <Navigate to="/legal/accessibility" replace /> },
+      { path: 'disclosure', element: <Navigate to="/legal/disclosure" replace /> },
       { path: ADMIN_ROUTE_PATH, element: <AdminDashboard /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]

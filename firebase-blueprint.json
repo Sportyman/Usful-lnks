@@ -65,6 +65,16 @@
         "aiPromptLinks": { "type": "string" },
         "aiPromptCategories": { "type": "string" },
         "aiModel": { "type": "string" },
+        "clarityId": { "type": "string", "description": "Microsoft Clarity Project ID" },
+        "excludedIps": { "type": "array", "items": { "type": "string" }, "description": "IP addresses to exclude from analytics and banners" },
+        "privacyPolicy_he": { "type": "string" },
+        "privacyPolicy_en": { "type": "string" },
+        "termsOfUse_he": { "type": "string" },
+        "termsOfUse_en": { "type": "string" },
+        "accessibility_he": { "type": "string" },
+        "accessibility_en": { "type": "string" },
+        "affiliateDisclosure_he": { "type": "string" },
+        "affiliateDisclosure_en": { "type": "string" },
         "affiliateUrlHistory": {
           "type": "array",
           "items": {

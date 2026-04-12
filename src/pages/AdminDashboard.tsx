@@ -13,9 +13,10 @@ import { bulkSeoService, BulkSeoProgress } from '../services/bulkSeoService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle, Shield, X } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import { useDebugStore } from '../store/debugStore';
+import { useClientIp } from '../hooks/useClientIp';
 import { auth } from '../services/firebase';
 import { Link } from 'react-router-dom';
 import { Modal } from '../components/ui/Modal';
@@ -84,6 +85,7 @@ export default function AdminDashboard() {
   const [bulkSeoConfirm, setBulkSeoConfirm] = useState(false);
 
   const { showDebugButton, setShowDebugButton } = useDebugStore();
+  const { ip: currentClientIp } = useClientIp();
 
   const loadData = async () => {
     try {
@@ -298,7 +300,24 @@ export default function AdminDashboard() {
 
   const totalClicks = links.reduce((acc, link) => acc + link.clicks, 0);
   const topLinks = [...links].sort((a, b) => b.clicks - a.clicks).slice(0, 5);
-  const isSettingsDirty = settings.affiliateUrl !== originalSettings.affiliateUrl || settings.aiPrompt !== originalSettings.aiPrompt || settings.aiModel !== originalSettings.aiModel;
+  const isSettingsDirty = 
+    settings.affiliateUrl !== originalSettings.affiliateUrl || 
+    settings.aiPrompt !== originalSettings.aiPrompt || 
+    settings.aiModel !== originalSettings.aiModel ||
+    settings.clarityId !== originalSettings.clarityId ||
+    settings.siteTitle_he !== originalSettings.siteTitle_he ||
+    settings.siteTitle_en !== originalSettings.siteTitle_en ||
+    settings.siteDescription_he !== originalSettings.siteDescription_he ||
+    settings.siteDescription_en !== originalSettings.siteDescription_en ||
+    JSON.stringify(settings.excludedIps) !== JSON.stringify(originalSettings.excludedIps) ||
+    settings.privacyPolicy_he !== originalSettings.privacyPolicy_he ||
+    settings.privacyPolicy_en !== originalSettings.privacyPolicy_en ||
+    settings.termsOfUse_he !== originalSettings.termsOfUse_he ||
+    settings.termsOfUse_en !== originalSettings.termsOfUse_en ||
+    settings.accessibility_he !== originalSettings.accessibility_he ||
+    settings.accessibility_en !== originalSettings.accessibility_en ||
+    settings.affiliateDisclosure_he !== originalSettings.affiliateDisclosure_he ||
+    settings.affiliateDisclosure_en !== originalSettings.affiliateDisclosure_en;
 
   const renderBulkSeoSection = () => (
     <div className={cn(
@@ -607,6 +626,47 @@ export default function AdminDashboard() {
                 ))}
               </div>
             </div>
+
+            {/* Detailed Click Report */}
+            <div className="bg-white p-5 rounded-2xl border border-black/5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-black/5 pb-2">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-ink-500">
+                  {language === 'he' ? 'דוח לחיצות מפורט' : 'Detailed Click Report'}
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-[10px] font-bold uppercase tracking-widest text-ink-400 border-b border-black/5">
+                      <th className="py-2 px-1 text-right">{language === 'he' ? 'שם הקישור' : 'Link Name'}</th>
+                      <th className="py-2 px-1 text-center">{language === 'he' ? 'לחיצות' : 'Clicks'}</th>
+                      <th className="py-2 px-1 text-center">{language === 'he' ? 'סטטוס' : 'Status'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {[...links].sort((a, b) => b.clicks - a.clicks).map((link) => (
+                      <tr key={link.id} className="text-xs hover:bg-gray-50 transition-colors">
+                        <td className="py-3 px-1">
+                          <div className="font-bold text-ink-900">{language === 'he' ? link.title_he : link.title_en}</div>
+                          <div className="text-[10px] text-ink-400 truncate max-w-[150px]">{link.targetUrl}</div>
+                        </td>
+                        <td className="py-3 px-1 text-center font-mono font-bold text-ink-900">
+                          {link.clicks}
+                        </td>
+                        <td className="py-3 px-1 text-center">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest",
+                            link.isActive ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                          )}>
+                            {link.isActive ? (language === 'he' ? 'פעיל' : 'Active') : (language === 'he' ? 'מושבת' : 'Disabled')}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -833,6 +893,207 @@ export default function AdminDashboard() {
                     />
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Advanced Analytics & Exclusion */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-accent-peach" />
+                  {language === 'he' ? 'אנליטיקה וסינון IP' : 'Analytics & IP Exclusion'}
+                </h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' 
+                    ? 'נהל את מזהה ה-Clarity וחסום כתובות IP כדי למנוע זיוף נתונים והופעת באנרים עבורך.' 
+                    : 'Manage Clarity ID and block IP addresses to prevent data skew and hide banners for yourself.'}
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+                    {language === 'he' ? 'מזהה פרויקט Clarity' : 'Clarity Project ID'}
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.clarityId || ''}
+                    onChange={(e) => setSettings({ ...settings, clarityId: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-peach text-sm font-mono"
+                    placeholder="e.g. abc123def456"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+                    {language === 'he' ? 'כתובות IP מוחרגות' : 'Excluded IP Addresses'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="new-ip"
+                      type="text"
+                      className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono"
+                      placeholder="1.2.3.4"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = (e.target as HTMLInputElement).value.trim();
+                          if (val && !settings.excludedIps?.includes(val)) {
+                            setSettings({ ...settings, excludedIps: [...(settings.excludedIps || []), val] });
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        const input = document.getElementById('new-ip') as HTMLInputElement;
+                        const val = input.value.trim();
+                        if (val && !settings.excludedIps?.includes(val)) {
+                          setSettings({ ...settings, excludedIps: [...(settings.excludedIps || []), val] });
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      {language === 'he' ? 'הוסף' : 'Add'}
+                    </Button>
+                  </div>
+
+                  {currentClientIp && !settings.excludedIps?.includes(currentClientIp) && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full border-dashed border-accent-peach/50 text-accent-peach-darker hover:bg-accent-peach/5"
+                      onClick={() => {
+                        setSettings({ 
+                          ...settings, 
+                          excludedIps: [...(settings.excludedIps || []), currentClientIp] 
+                        });
+                      }}
+                    >
+                      <Shield className="w-3.5 h-3.5 mr-2" />
+                      {language === 'he' ? `חסום את ה-IP שלי (${currentClientIp})` : `Block my IP (${currentClientIp})`}
+                    </Button>
+                  )}
+
+                  <div className="flex flex-wrap gap-2">
+                    {settings.excludedIps?.map(ip => (
+                      <div key={ip} className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-[10px] font-mono font-bold text-ink-600 border border-black/5">
+                        {ip}
+                        <button 
+                          onClick={() => setSettings({ ...settings, excludedIps: settings.excludedIps?.filter(i => i !== ip) })}
+                          className="hover:text-red-500 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-ink-400 italic">
+                    {language === 'he' 
+                      ? '* כתובות אלו לא ייספרו באנליטיקה ולא יראו את באנר העוגיות.' 
+                      : '* These IPs will not be counted in analytics and will not see the cookie banner.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Legal Documents */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-accent-peach" />
+                  {language === 'he' ? 'מסמכים משפטיים' : 'Legal Documents'}
+                </h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' ? 'ערוך את התנאים והמדיניות של האתר.' : 'Edit site terms and policies.'}
+                </p>
+              </div>
+
+              <div className="space-y-8">
+                {/* Privacy Policy */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
+                    {language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <textarea
+                      placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
+                      value={settings.privacyPolicy_he || ''}
+                      onChange={(e) => setSettings({ ...settings, privacyPolicy_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                    <textarea
+                      placeholder={language === 'he' ? 'אנגלית...' : 'English...'}
+                      value={settings.privacyPolicy_en || ''}
+                      onChange={(e) => setSettings({ ...settings, privacyPolicy_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                  </div>
+                </div>
+
+                {/* Terms of Use */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
+                    {language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <textarea
+                      placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
+                      value={settings.termsOfUse_he || ''}
+                      onChange={(e) => setSettings({ ...settings, termsOfUse_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                    <textarea
+                      placeholder={language === 'he' ? 'אנגלית...' : 'English...'}
+                      value={settings.termsOfUse_en || ''}
+                      onChange={(e) => setSettings({ ...settings, termsOfUse_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                  </div>
+                </div>
+
+                {/* Accessibility */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
+                    {language === 'he' ? 'הצהרת נגישות' : 'Accessibility Statement'}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <textarea
+                      placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
+                      value={settings.accessibility_he || ''}
+                      onChange={(e) => setSettings({ ...settings, accessibility_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                    <textarea
+                      placeholder={language === 'he' ? 'אנגלית...' : 'English...'}
+                      value={settings.accessibility_en || ''}
+                      onChange={(e) => setSettings({ ...settings, accessibility_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                  </div>
+                </div>
+
+                {/* Affiliate Disclosure */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-ink-400 border-b border-black/5 pb-1">
+                    {language === 'he' ? 'גילוי נאות שותפים' : 'Affiliate Disclosure'}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <textarea
+                      placeholder={language === 'he' ? 'עברית...' : 'Hebrew...'}
+                      value={settings.affiliateDisclosure_he || ''}
+                      onChange={(e) => setSettings({ ...settings, affiliateDisclosure_he: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                    <textarea
+                      placeholder={language === 'he' ? 'אנגלית...' : 'English...'}
+                      value={settings.affiliateDisclosure_en || ''}
+                      onChange={(e) => setSettings({ ...settings, affiliateDisclosure_en: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm h-32"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

@@ -33,7 +33,14 @@ export default function RedirectPage() {
       }
 
       try {
-        const link = await linkService.getLinkById(linkId);
+        // Try to find by ID first, then by custom slug
+        let link = await linkService.getLinkById(linkId);
+        
+        if (!link) {
+          addLog('debug', 'RedirectPage: Link not found by ID, trying slug', { slug: linkId });
+          link = await linkService.getLinkBySlug(linkId);
+        }
+
         if (!link) {
           addLog('warn', 'RedirectPage: Link not found', { linkId });
           navigate('/');
@@ -42,7 +49,7 @@ export default function RedirectPage() {
 
         const decodedUrl = link.targetUrl;
         setTargetUrl(decodedUrl);
-        addLog('info', 'RedirectPage: Starting redirection', { linkId, targetUrl: decodedUrl });
+        addLog('info', 'RedirectPage: Starting redirection', { linkId: link.id, targetUrl: decodedUrl });
 
         // 1. Fetch Affiliate URL & Settings
         const settings = await settingsService.getGlobalSettings();
@@ -73,8 +80,8 @@ export default function RedirectPage() {
         triggerAffiliate();
 
         // 3. Analytics & Firestore Increment
-        linkService.incrementClicks(linkId);
-        analyticsService.logLinkClick(linkId, 'Redirecting...');
+        linkService.incrementClicks(link.id);
+        analyticsService.logLinkClick(link.id, 'Redirecting...');
 
         // 4. Final Redirect to the ACTUAL target URL (X)
         timer = setTimeout(() => {

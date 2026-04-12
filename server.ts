@@ -8,18 +8,36 @@ import admin from "firebase-admin";
 dotenv.config();
 
 // Initialize Firebase Admin
-if (process.env.VITE_FIREBASE_PROJECT_ID) {
+const initializeFirebaseAdmin = () => {
+  if (admin.apps.length > 0) return;
+
   try {
-    admin.initializeApp({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    });
-    console.log("Firebase Admin initialized for project:", process.env.VITE_FIREBASE_PROJECT_ID);
+    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 
+                      process.env.FIREBASE_PROJECT_ID || 
+                      process.env.GOOGLE_CLOUD_PROJECT || 
+                      process.env.GCP_PROJECT;
+    
+    if (projectId && projectId !== "undefined" && projectId !== "") {
+      admin.initializeApp({
+        projectId: projectId,
+      });
+      console.log("Firebase Admin initialized for project:", projectId);
+    } else {
+      // Try default initialization (works in Cloud Run if service account has access)
+      admin.initializeApp();
+      console.log("Firebase Admin initialized with default credentials");
+    }
   } catch (e) {
     console.error("Firebase Admin initialization failed:", e);
   }
-}
+};
+
+initializeFirebaseAdmin();
 
 const db = admin.firestore();
+// If you are using a named database, you might need:
+// const db = admin.firestore().database('your-database-id');
+// But we'll stick to default for now unless we find a database ID.
 
 const PRIMARY_MODEL = "gemini-3-flash-preview";
 const FALLBACK_MODEL = "gemini-2.5-flash";
@@ -51,13 +69,27 @@ const serveWithMeta = async (req: express.Request, res: express.Response, next: 
     let url = process.env.APP_URL || "";
 
     if (linkId) {
-      const linkDoc = await db.collection('links').doc(linkId).get();
-      if (linkDoc.exists) {
-        const data = linkDoc.data() || {};
-        title = data.title_he || data.title_en || title;
-        description = data.description_he || data.description_en || description;
-        imageUrl = data.imageUrl || imageUrl;
-        url = `${url}/go/${linkId}`;
+      try {
+        let linkDoc = await db.collection('links').doc(linkId).get();
+        let data = linkDoc.exists ? linkDoc.data() : null;
+
+        // If not found by ID, try searching by customSlug
+        if (!data) {
+          const slugQuery = await db.collection('links').where('customSlug', '==', linkId).limit(1).get();
+          if (!slugQuery.empty) {
+            data = slugQuery.docs[0].data();
+          }
+        }
+
+        if (data) {
+          title = data.title_he || data.title_en || title;
+          description = data.description_he || data.description_en || description;
+          imageUrl = data.imageUrl || imageUrl;
+          url = `${url}/go/${linkId}`;
+        }
+      } catch (dbError) {
+        console.error("Firestore access error in meta injection:", dbError);
+        // Continue without specific meta data if DB fails
       }
     } else if (categoryId) {
       const catDoc = await db.collection('categories').doc(categoryId).get();

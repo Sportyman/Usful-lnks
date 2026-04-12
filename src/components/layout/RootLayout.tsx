@@ -10,6 +10,8 @@ import { LanguageToggle } from './LanguageToggle';
 import { Footer } from './Footer';
 import { useLanguageStore } from '../../store/languageStore';
 import { Sparkles } from 'lucide-react';
+import { ClarityTracker } from '../ClarityTracker';
+import { CookieBanner } from '../CookieBanner';
 
 export function RootLayout() {
   useLanguageSync();
@@ -40,6 +42,8 @@ export function RootLayout() {
 
   return (
     <div className="min-h-screen bg-bg-soft text-ink-900 font-sans selection:bg-accent-peach selection:text-ink-900 flex flex-col">
+      <ClarityTracker />
+      <CookieBanner />
       {/* Floating Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6 pointer-events-none">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between pointer-events-auto">

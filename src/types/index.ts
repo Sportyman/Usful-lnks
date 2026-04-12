@@ -37,6 +37,7 @@ export interface Link {
   description_he: string;
   description_en: string;
   targetUrl: string;
+  customSlug?: string;
   categoryId: string;
   imageUrl?: string;
   tags?: string[];
@@ -78,6 +79,16 @@ export interface GlobalSettings {
   siteKeywords_he?: string;
   siteKeywords_en?: string;
   siteOgImage?: string;
+  clarityId?: string;
+  excludedIps?: string[];
+  privacyPolicy_he?: string;
+  privacyPolicy_en?: string;
+  termsOfUse_he?: string;
+  termsOfUse_en?: string;
+  accessibility_he?: string;
+  accessibility_en?: string;
+  affiliateDisclosure_he?: string;
+  affiliateDisclosure_en?: string;
 }
 
 declare global {

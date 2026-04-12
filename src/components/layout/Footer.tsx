@@ -4,13 +4,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useLanguageStore } from '../../store/languageStore';
 import { ADMIN_CLICK_TRIGGER, ADMIN_SHORTCUT } from '../../config/constants';
 import { APP_VERSION } from '../../config/version';
 
 export function Footer() {
-  const { language } = useLanguageStore();
+  const { language, isRTL } = useLanguageStore();
   const [clickCount, setClickCount] = useState(0);
   const navigate = useNavigate();
 
@@ -58,6 +58,23 @@ export function Footer() {
           <div className="w-1 h-1 rounded-full bg-accent-peach" />
           <div className="w-1 h-1 rounded-full bg-accent-sage" />
           <div className="w-1 h-1 rounded-full bg-accent-lavender" />
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-4">
+          {[
+            { id: 'privacy', label: language === 'he' ? 'פרטיות' : 'Privacy' },
+            { id: 'terms', label: language === 'he' ? 'תנאים' : 'Terms' },
+            { id: 'accessibility', label: language === 'he' ? 'נגישות' : 'Accessibility' },
+            { id: 'disclosure', label: language === 'he' ? 'גילוי נאות' : 'Disclosure' }
+          ].map(link => (
+            <Link 
+              key={link.id} 
+              to={`/legal/${link.id}`}
+              className="text-[9px] font-bold uppercase tracking-widest text-ink-400 hover:text-ink-900 transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
       </div>
     </footer>

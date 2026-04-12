@@ -84,7 +84,35 @@ export const linkService = {
     return null;
   },
 
+  async getLinkBySlug(slug: string) {
+    const linksRef = collection(db, LINKS_COLLECTION);
+    const q = query(linksRef, where('customSlug', '==', slug));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return { id: doc.id, ...doc.data() } as Link;
+    }
+    return null;
+  },
+
   async incrementClicks(id: string) {
+    // Check if current IP is excluded
+    const settings = (await import('./settingsService')).settingsService.getGlobalSettings();
+    const currentSettings = await settings;
+    
+    if (currentSettings?.excludedIps && currentSettings.excludedIps.length > 0) {
+      try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        if (currentSettings.excludedIps.includes(data.ip)) {
+          console.log('Click ignored for excluded IP:', data.ip);
+          return;
+        }
+      } catch (e) {
+        // Fallback to counting if IP check fails
+      }
+    }
+
     const linkRef = doc(db, LINKS_COLLECTION, id);
     return await updateDoc(linkRef, {
       clicks: increment(1)

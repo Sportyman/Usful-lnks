@@ -67,6 +67,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     seoDescription_en: initialData?.seoDescription_en || '',
     seoKeywords_he: initialData?.seoKeywords_he || '',
     seoKeywords_en: initialData?.seoKeywords_en || '',
+    customSlug: initialData?.customSlug || '',
     sourceContext: '',
   });
 
@@ -242,42 +243,49 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
         </div>
 
         {/* URL Section */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
-            {language === 'he' ? 'כתובת יעד (URL)' : 'Target URL'}
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              required
-              value={formData.targetUrl}
-              onChange={e => setFormData({ ...formData, targetUrl: e.target.value })}
-              className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
-              placeholder="https://..."
-            />
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={handlePaste}
-              className="px-4"
-              title={language === 'he' ? 'הדבק' : 'Paste'}
-            >
-              <ClipboardPaste className="w-4 h-4" />
-            </Button>
-            <Button 
-              type="button" 
-              variant="secondary" 
-              onClick={() => handleMagicGenerate()}
-              isLoading={isGenerating && !generatingField}
-              className="px-4"
-              title={language === 'he' ? 'ייצור מידע אוטומטי' : 'Auto-generate info'}
-            >
-              <Wand2 className="w-4 h-4" />
-            </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+              {language === 'he' ? 'כתובת יעד (URL)' : 'Target URL'}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                required
+                value={formData.targetUrl}
+                onChange={e => setFormData({ ...formData, targetUrl: e.target.value })}
+                className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm"
+                placeholder="https://..."
+              />
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={handlePaste}
+                className="px-3"
+                title={language === 'he' ? 'הדבק' : 'Paste'}
+              >
+                <ClipboardPaste className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <p className="mt-1.5 text-[10px] text-ink-500 italic">
-            {language === 'he' ? 'הקישור החיצוני שאליו המשתמש יופנה. לחץ על המטה הקסם לייצור אוטומטי!' : 'The external link the user will be redirected to. Click the magic wand for auto-generation!'}
-          </p>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500">
+              {language === 'he' ? 'קיצור מותאם (Slug)' : 'Custom Slug'}
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">/go/</span>
+                <input
+                  type="text"
+                  value={formData.customSlug}
+                  onChange={e => setFormData({ ...formData, customSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent-peach focus:border-accent-peach transition-all shadow-sm font-mono text-sm"
+                  placeholder="my-deal"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {aiError && (
