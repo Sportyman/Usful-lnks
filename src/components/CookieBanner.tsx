@@ -15,19 +15,23 @@ import { Link } from 'react-router-dom';
 export const CookieBanner = () => {
   const { language, isRTL } = useLanguageStore();
   const { settings } = useDataStore();
-  const { ip } = useClientIp();
+  const { ip, isLoading: isIpLoading } = useClientIp();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    if (isIpLoading) return;
+
     const consent = localStorage.getItem('cookie-consent');
     const isExcluded = ip && settings?.excludedIps?.includes(ip);
 
     if (!consent && !isExcluded) {
       // Show after a short delay
-      const timer = setTimeout(() => setIsVisible(true), 1500);
+      const timer = setTimeout(() => setIsVisible(true), 1000);
       return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
     }
-  }, [ip, settings?.excludedIps]);
+  }, [ip, isIpLoading, settings?.excludedIps]);
 
   const handleAccept = () => {
     localStorage.setItem('cookie-consent', 'true');

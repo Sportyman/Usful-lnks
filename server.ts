@@ -377,6 +377,14 @@ app.post("/api/gemini/generate-legal-content", async (req, res) => {
     The website is a discovery platform for digital tools, gifts, and affiliate deals.
     The document must be in ${language === 'he' ? 'Hebrew' : 'English'}.
     
+    CRITICAL: Use Markdown formatting for the output. 
+    - Use # for the main title
+    - Use ## for section headers
+    - Use ### for sub-headers
+    - Use * or - for bullet points
+    - Use **bold** for emphasis
+    - Use [Link Text](URL) for links
+    
     Guidelines:
     - Focus on Israeli law (Privacy Protection Law, Accessibility Law, Consumer Protection Law).
     - Make it professional, clear, and comprehensive.
@@ -384,7 +392,7 @@ app.post("/api/gemini/generate-legal-content", async (req, res) => {
     - Include placeholders like [NAME], [EMAIL], [DATE] where specific details are needed.
     - For Accessibility: Mention that the site aims to comply with WCAG 2.1 Level AA.
     - For Privacy: Mention data collection via cookies and Microsoft Clarity.
-    - For Terms: Include limitation of liability for external links.`;
+    - For Terms: Include limitation of liability for external links and a subtle mention that some links may be affiliate links.`;
 
     const response = await ai.models.generateContent({
       model: PRIMARY_MODEL,

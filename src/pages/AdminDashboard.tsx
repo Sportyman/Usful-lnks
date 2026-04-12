@@ -28,6 +28,7 @@ import { PromptEditorTab } from '../components/admin/PromptEditorTab';
 import { UserManagementTab } from '../components/admin/UserManagementTab';
 import { useDataStore } from '../store/dataStore';
 import { cn } from '../utils/cn';
+import { toast } from 'sonner';
 import { AFFILIATE_BASE_URL } from '../config/constants';
 import { motion } from 'motion/react';
 
@@ -1033,21 +1034,21 @@ export default function AdminDashboard() {
                     </h4>
                     <div className="flex gap-2">
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="secondary"
                         onClick={() => handleGenerateLegal('Privacy Policy', 'he', 'privacyPolicy_he')}
                         isLoading={isGeneratingLegal === 'Privacy Policy_he'}
-                        className="text-[9px] h-6"
+                        className="text-[9px] h-6 px-2"
                       >
                         <Wand2 className="w-3 h-3 mr-1" />
                         {language === 'he' ? 'צור בעברית' : 'Gen Hebrew'}
                       </Button>
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="secondary"
                         onClick={() => handleGenerateLegal('Privacy Policy', 'en', 'privacyPolicy_en')}
                         isLoading={isGeneratingLegal === 'Privacy Policy_en'}
-                        className="text-[9px] h-6"
+                        className="text-[9px] h-6 px-2"
                       >
                         <Wand2 className="w-3 h-3 mr-1" />
                         {language === 'he' ? 'צור באנגלית' : 'Gen English'}
@@ -1078,21 +1079,21 @@ export default function AdminDashboard() {
                     </h4>
                     <div className="flex gap-2">
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="secondary"
                         onClick={() => handleGenerateLegal('Terms of Use', 'he', 'termsOfUse_he')}
                         isLoading={isGeneratingLegal === 'Terms of Use_he'}
-                        className="text-[9px] h-6"
+                        className="text-[9px] h-6 px-2"
                       >
                         <Wand2 className="w-3 h-3 mr-1" />
                         {language === 'he' ? 'צור בעברית' : 'Gen Hebrew'}
                       </Button>
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="secondary"
                         onClick={() => handleGenerateLegal('Terms of Use', 'en', 'termsOfUse_en')}
                         isLoading={isGeneratingLegal === 'Terms of Use_en'}
-                        className="text-[9px] h-6"
+                        className="text-[9px] h-6 px-2"
                       >
                         <Wand2 className="w-3 h-3 mr-1" />
                         {language === 'he' ? 'צור באנגלית' : 'Gen English'}
@@ -1123,21 +1124,21 @@ export default function AdminDashboard() {
                     </h4>
                     <div className="flex gap-2">
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="secondary"
                         onClick={() => handleGenerateLegal('Accessibility Statement', 'he', 'accessibility_he')}
                         isLoading={isGeneratingLegal === 'Accessibility Statement_he'}
-                        className="text-[9px] h-6"
+                        className="text-[9px] h-6 px-2"
                       >
                         <Wand2 className="w-3 h-3 mr-1" />
                         {language === 'he' ? 'צור בעברית' : 'Gen Hebrew'}
                       </Button>
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="secondary"
                         onClick={() => handleGenerateLegal('Accessibility Statement', 'en', 'accessibility_en')}
                         isLoading={isGeneratingLegal === 'Accessibility Statement_en'}
-                        className="text-[9px] h-6"
+                        className="text-[9px] h-6 px-2"
                       >
                         <Wand2 className="w-3 h-3 mr-1" />
                         {language === 'he' ? 'צור באנגלית' : 'Gen English'}

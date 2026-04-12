@@ -9,6 +9,7 @@ import { useLanguageStore } from '../store/languageStore';
 import { useDataStore } from '../store/dataStore';
 import { motion } from 'motion/react';
 import { ArrowLeft, ArrowRight, Shield, FileText, Accessibility, Info } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { cn } from '../utils/cn';
 
 export default function LegalPage() {
@@ -82,10 +83,10 @@ export default function LegalPage() {
           <div className="bg-white p-8 md:p-12 rounded-[40px] shadow-sm border border-black/5">
             {content ? (
               <div 
-                className="prose prose-sm max-w-none text-ink-700 leading-relaxed whitespace-pre-wrap"
+                className="prose prose-sm md:prose-base max-w-none text-ink-700 leading-relaxed prose-headings:text-ink-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight prose-a:text-accent-peach prose-strong:text-ink-900"
                 dir={isRTL ? 'rtl' : 'ltr'}
               >
-                {content}
+                <ReactMarkdown>{content}</ReactMarkdown>
               </div>
             ) : (
               <div className="text-center py-12 text-ink-400 italic">
