@@ -438,7 +438,19 @@ Website URL: ${legalInfo.websiteUrl || 'N/A'}
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
-    res.json(JSON.parse(text));
+    // Robust JSON parsing
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    }
+    
+    try {
+      const parsed = JSON.parse(cleanText);
+      res.json(parsed);
+    } catch (parseError) {
+      console.error("JSON Parse Error in Single Legal. Raw text:", text);
+      throw new Error("Failed to parse AI response as JSON");
+    }
   } catch (error: any) {
     console.error("Server Gemini Legal Error:", error);
     res.status(500).json({ error: error.message || "Failed to generate legal content" });
@@ -471,20 +483,20 @@ Website URL: ${legalInfo.websiteUrl || 'N/A'}
     Generate ALL required legal documents for a website named "DIGITAL.GIFTS" in both Hebrew and English.
     The website is a discovery platform for digital tools, gifts, and affiliate deals.
     
-    Documents needed:
-    1. Privacy Policy (Hebrew & English)
-    2. Terms of Use (Hebrew & English)
-    3. Accessibility Statement (Hebrew & English)
+    Required Documents (6 total):
+    - Privacy Policy (HE & EN)
+    - Terms of Use (HE & EN)
+    - Accessibility Statement (HE & EN)
     
-    ${infoStr ? `USE THE FOLLOWING INFORMATION TO FILL IN THE DOCUMENTS:
-    ${infoStr}` : 'Use appropriate legal terminology and include placeholders like [NAME], [EMAIL] where needed.'}
+    ${infoStr ? `USE THIS INFO (DO NOT USE PLACEHOLDERS):
+    ${infoStr}` : 'Use professional placeholders like [NAME], [EMAIL] where needed.'}
     
-    CRITICAL: Use Markdown formatting for each document. 
-    - DO NOT MAKE THE ENTIRE CONTENT BOLD.
-    - Use headers, lists, and clear structure.
-    - Focus on Israeli law (Privacy Protection Law, Accessibility Law).
+    Formatting:
+    - Use Markdown (headers, lists).
+    - DO NOT use bold for the entire text.
+    - Be concise but thorough.
     
-    Return the content in a JSON object with these exact keys:
+    Return a JSON object with these keys:
     "privacyPolicy_he", "privacyPolicy_en", "termsOfUse_he", "termsOfUse_en", "accessibility_he", "accessibility_en"`;
 
     const response = await ai.models.generateContent({
@@ -510,7 +522,19 @@ Website URL: ${legalInfo.websiteUrl || 'N/A'}
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
-    res.json(JSON.parse(text));
+    // Robust JSON parsing
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```')) {
+      cleanText = cleanText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+    }
+    
+    try {
+      const parsed = JSON.parse(cleanText);
+      res.json(parsed);
+    } catch (parseError) {
+      console.error("JSON Parse Error in Bulk Legal. Raw text:", text);
+      throw new Error("Failed to parse AI response as JSON");
+    }
   } catch (error: any) {
     console.error("Server Gemini Bulk Legal Error:", error);
     res.status(500).json({ error: error.message || "Failed to generate bulk legal content" });
