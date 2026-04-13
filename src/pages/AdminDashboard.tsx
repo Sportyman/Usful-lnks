@@ -52,7 +52,14 @@ export default function AdminDashboard() {
     fontFamily: 'Inter',
     borderRadius: '24px',
     showHeroMarquee: true,
-    heroMarqueeText: 'DIGITAL.GIFTS COLLECTION 2026'
+    heroMarqueeText: 'DIGITAL.GIFTS COLLECTION 2026',
+    legalInfo: {
+      companyName: '',
+      email: '',
+      address: '',
+      websiteUrl: '',
+      ownerName: ''
+    }
   });
   const [originalSettings, setOriginalSettings] = useState<GlobalSettings>({ 
     affiliateUrl: '',
@@ -68,7 +75,14 @@ export default function AdminDashboard() {
     fontFamily: 'Inter',
     borderRadius: '24px',
     showHeroMarquee: true,
-    heroMarqueeText: 'DIGITAL.GIFTS COLLECTION 2026'
+    heroMarqueeText: 'DIGITAL.GIFTS COLLECTION 2026',
+    legalInfo: {
+      companyName: '',
+      email: '',
+      address: '',
+      websiteUrl: '',
+      ownerName: ''
+    }
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -334,22 +348,7 @@ export default function AdminDashboard() {
 
   const totalClicks = links.reduce((acc, link) => acc + link.clicks, 0);
   const topLinks = [...links].sort((a, b) => b.clicks - a.clicks).slice(0, 5);
-  const isSettingsDirty = 
-    settings.affiliateUrl !== originalSettings.affiliateUrl || 
-    settings.aiPrompt !== originalSettings.aiPrompt || 
-    settings.aiModel !== originalSettings.aiModel ||
-    settings.clarityId !== originalSettings.clarityId ||
-    settings.siteTitle_he !== originalSettings.siteTitle_he ||
-    settings.siteTitle_en !== originalSettings.siteTitle_en ||
-    settings.siteDescription_he !== originalSettings.siteDescription_he ||
-    settings.siteDescription_en !== originalSettings.siteDescription_en ||
-    JSON.stringify(settings.excludedIps) !== JSON.stringify(originalSettings.excludedIps) ||
-    settings.privacyPolicy_he !== originalSettings.privacyPolicy_he ||
-    settings.privacyPolicy_en !== originalSettings.privacyPolicy_en ||
-    settings.termsOfUse_he !== originalSettings.termsOfUse_he ||
-    settings.termsOfUse_en !== originalSettings.termsOfUse_en ||
-    settings.accessibility_he !== originalSettings.accessibility_he ||
-    settings.accessibility_en !== originalSettings.accessibility_en;
+  const isSettingsDirty = JSON.stringify(settings) !== JSON.stringify(originalSettings);
 
   const renderBulkSeoSection = () => (
     <div className={cn(
