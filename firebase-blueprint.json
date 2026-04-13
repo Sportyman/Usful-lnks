@@ -74,6 +74,16 @@
         "termsOfUse_en": { "type": "string" },
         "accessibility_he": { "type": "string" },
         "accessibility_en": { "type": "string" },
+        "legalInfo": {
+          "type": "object",
+          "properties": {
+            "companyName": { "type": "string" },
+            "email": { "type": "string" },
+            "address": { "type": "string" },
+            "websiteUrl": { "type": "string" },
+            "ownerName": { "type": "string" }
+          }
+        },
         "affiliateUrlHistory": {
           "type": "array",
           "items": {

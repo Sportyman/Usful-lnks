@@ -88,6 +88,13 @@ export interface GlobalSettings {
   termsOfUse_en?: string;
   accessibility_he?: string;
   accessibility_en?: string;
+  legalInfo?: {
+    companyName?: string;
+    email?: string;
+    address?: string;
+    websiteUrl?: string;
+    ownerName?: string;
+  };
 }
 
 declare global {

@@ -84,8 +84,17 @@ const serveWithMeta = async (req: express.Request, res: express.Response, next: 
         if (data) {
           title = data.seoTitle_he || data.seoTitle_en || data.title_he || data.title_en || title;
           description = data.seoDescription_he || data.seoDescription_en || data.description_he || data.description_en || description;
-          imageUrl = data.imageUrl || imageUrl;
-          url = `${url}/go/${linkId}`;
+          
+          let img = data.imageUrl || imageUrl;
+          if (img && !img.startsWith('http')) {
+            const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+            imageUrl = new URL(img, baseUrl).toString();
+          } else {
+            imageUrl = img;
+          }
+          
+          const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+          url = `${baseUrl}/go/${linkId}`;
         }
       } catch (dbError) {
         console.error("Firestore access error in meta injection:", dbError);
@@ -97,8 +106,17 @@ const serveWithMeta = async (req: express.Request, res: express.Response, next: 
         const data = catDoc.data() || {};
         title = data.name_he || data.name_en || title;
         description = data.seoDescription_he || data.seoDescription_en || description;
-        imageUrl = data.imageUrl || imageUrl;
-        url = `${url}/?category=${categoryId}`;
+        
+        let img = data.imageUrl || imageUrl;
+        if (img && !img.startsWith('http')) {
+          const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+          imageUrl = new URL(img, baseUrl).toString();
+        } else {
+          imageUrl = img;
+        }
+        
+        const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+        url = `${baseUrl}/?category=${categoryId}`;
       }
     }
 
@@ -359,7 +377,7 @@ app.post("/api/gemini/generate-seo-metadata", async (req, res) => {
 
 app.post("/api/gemini/generate-legal-content", async (req, res) => {
   try {
-    const { type, language } = req.body;
+    const { type, language, legalInfo } = req.body;
     
     let apiKey = process.env.GEMINI_API_KEY;
     if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
@@ -372,24 +390,32 @@ app.post("/api/gemini/generate-legal-content", async (req, res) => {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    const infoStr = legalInfo ? `
+Company/Owner Name: ${legalInfo.companyName || legalInfo.ownerName || 'N/A'}
+Email: ${legalInfo.email || 'N/A'}
+Address: ${legalInfo.address || 'N/A'}
+Website URL: ${legalInfo.websiteUrl || 'N/A'}
+` : '';
+
     const prompt = `You are an expert legal advisor specializing in Israeli law and digital regulations.
     Generate a thorough, detailed, and legally compliant ${type} document for a website named "DIGITAL.GIFTS".
     The website is a discovery platform for digital tools, gifts, and affiliate deals.
     The document must be in ${language === 'he' ? 'Hebrew' : 'English'}.
+    
+    ${infoStr ? `USE THE FOLLOWING INFORMATION TO FILL IN THE DOCUMENT (DO NOT USE PLACEHOLDERS LIKE [EMAIL] OR [COMPANY NAME]):
+    ${infoStr}` : 'Use appropriate legal terminology and include placeholders like [NAME], [EMAIL], [DATE] where specific details are needed.'}
     
     CRITICAL: Use Markdown formatting for the output. 
     - Use # for the main title
     - Use ## for section headers
     - Use ### for sub-headers
     - Use * or - for bullet points
-    - Use **bold** for emphasis
+    - Use **bold** for emphasis (BUT DO NOT MAKE THE ENTIRE DOCUMENT BOLD)
     - Use [Link Text](URL) for links
     
     Guidelines:
     - Focus on Israeli law (Privacy Protection Law, Accessibility Law, Consumer Protection Law).
     - Make it professional, clear, and comprehensive.
-    - Use appropriate legal terminology.
-    - Include placeholders like [NAME], [EMAIL], [DATE] where specific details are needed.
     - For Accessibility: Mention that the site aims to comply with WCAG 2.1 Level AA.
     - For Privacy: Mention data collection via cookies and Microsoft Clarity.
     - For Terms: Include limitation of liability for external links and a subtle mention that some links may be affiliate links.`;

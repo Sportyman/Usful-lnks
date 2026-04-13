@@ -13,7 +13,7 @@ import { bulkSeoService, BulkSeoProgress } from '../services/bulkSeoService';
 import { Link as LinkType, Category, GlobalSettings } from '../types';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle, Shield, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, BarChart2, LogOut, ArrowLeft, ArrowRight, Settings, ExternalLink, Save, History, RotateCcw, CheckCircle2, Activity, Download, Copy, Check, Terminal, Wand2, Search, AlertCircle, Shield, X, Info } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import { useDebugStore } from '../store/debugStore';
 import { useClientIp } from '../hooks/useClientIp';
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
   const handleGenerateLegal = async (type: string, lang: 'he' | 'en', field: keyof GlobalSettings) => {
     setIsGeneratingLegal(`${type}_${lang}`);
     try {
-      const content = await geminiService.generateLegalContent(type, lang);
+      const content = await geminiService.generateLegalContent(type, lang, settings.legalInfo);
       setSettings(prev => ({ ...prev, [field]: content }));
       toast.success(language === 'he' ? 'המסמך נוצר בהצלחה!' : 'Document generated successfully!');
     } catch (error: any) {
@@ -1009,6 +1009,82 @@ export default function AdminDashboard() {
                       ? '* כתובות אלו לא ייספרו באנליטיקה ולא יראו את באנר העוגיות.' 
                       : '* These IPs will not be counted in analytics and will not see the cookie banner.'}
                   </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Legal Questionnaire */}
+            <div className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm space-y-6">
+              <div className="space-y-1">
+                <h3 className="font-bold text-lg text-ink-900 flex items-center gap-2">
+                  <Info className="w-5 h-5 text-accent-peach" />
+                  {language === 'he' ? 'מידע למסמכים משפטיים' : 'Legal Documents Info'}
+                </h3>
+                <p className="text-xs text-ink-500">
+                  {language === 'he' ? 'מלא את הפרטים הבאים כדי שה-AI יוכל להטמיע אותם ישירות במסמכים.' : 'Fill in these details so the AI can embed them directly into the documents.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-ink-400">
+                    {language === 'he' ? 'שם החברה / בעל האתר' : 'Company / Owner Name'}
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.legalInfo?.companyName || ''}
+                    onChange={(e) => setSettings({ 
+                      ...settings, 
+                      legalInfo: { ...settings.legalInfo, companyName: e.target.value } 
+                    })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                    placeholder={language === 'he' ? 'למשל: דיגיטל גיפטס בע"מ' : 'e.g., Digital Gifts Ltd.'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-ink-400">
+                    {language === 'he' ? 'אימייל ליצירת קשר' : 'Contact Email'}
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.legalInfo?.email || ''}
+                    onChange={(e) => setSettings({ 
+                      ...settings, 
+                      legalInfo: { ...settings.legalInfo, email: e.target.value } 
+                    })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                    placeholder="support@example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-ink-400">
+                    {language === 'he' ? 'כתובת פיזית' : 'Physical Address'}
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.legalInfo?.address || ''}
+                    onChange={(e) => setSettings({ 
+                      ...settings, 
+                      legalInfo: { ...settings.legalInfo, address: e.target.value } 
+                    })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                    placeholder={language === 'he' ? 'רחוב, עיר, מיקוד' : 'Street, City, Zip'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-ink-400">
+                    {language === 'he' ? 'כתובת האתר (URL)' : 'Website URL'}
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.legalInfo?.websiteUrl || ''}
+                    onChange={(e) => setSettings({ 
+                      ...settings, 
+                      legalInfo: { ...settings.legalInfo, websiteUrl: e.target.value } 
+                    })}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
             </div>

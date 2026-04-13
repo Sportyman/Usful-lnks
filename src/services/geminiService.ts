@@ -163,7 +163,7 @@ export const geminiService = {
     }
   },
 
-  async generateLegalContent(type: string, language: 'he' | 'en') {
+  async generateLegalContent(type: string, language: 'he' | 'en', legalInfo?: any) {
     try {
       const idToken = await getIdToken();
       const response = await fetch('/api/gemini/generate-legal-content', {
@@ -172,7 +172,7 @@ export const geminiService = {
           'Content-Type': 'application/json',
           ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
         },
-        body: JSON.stringify({ type, language })
+        body: JSON.stringify({ type, language, legalInfo })
       });
 
       if (!response.ok) {
