@@ -188,6 +188,30 @@ export const geminiService = {
     }
   },
 
+  async generateAllLegalContent(legalInfo?: any) {
+    try {
+      const idToken = await getIdToken();
+      const response = await fetch('/api/gemini/generate-all-legal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+        },
+        body: JSON.stringify({ legalInfo })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API Error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Gemini Bulk Legal Error:", error);
+      throw error;
+    }
+  },
+
   async fetchOgImage(url: string) {
     try {
       const idToken = await getIdToken();

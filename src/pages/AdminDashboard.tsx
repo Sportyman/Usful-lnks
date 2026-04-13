@@ -90,6 +90,7 @@ export default function AdminDashboard() {
   const { ip: currentClientIp } = useClientIp();
 
   const [isGeneratingLegal, setIsGeneratingLegal] = useState<string | null>(null);
+  const [isGeneratingAllLegal, setIsGeneratingAllLegal] = useState(false);
 
   const handleGenerateLegal = async (type: string, lang: 'he' | 'en', field: keyof GlobalSettings) => {
     setIsGeneratingLegal(`${type}_${lang}`);
@@ -101,6 +102,22 @@ export default function AdminDashboard() {
       toast.error(language === 'he' ? 'שגיאה ביצירת המסמך' : 'Error generating document');
     } finally {
       setIsGeneratingLegal(null);
+    }
+  };
+
+  const handleGenerateAllLegal = async () => {
+    setIsGeneratingAllLegal(true);
+    try {
+      const results = await geminiService.generateAllLegalContent(settings.legalInfo);
+      setSettings(prev => ({ 
+        ...prev, 
+        ...results
+      }));
+      toast.success(language === 'he' ? 'כל המסמכים נוצרו בהצלחה!' : 'All documents generated successfully!');
+    } catch (error: any) {
+      toast.error(language === 'he' ? 'שגיאה ביצירת המסמכים' : 'Error generating documents');
+    } finally {
+      setIsGeneratingAllLegal(false);
     }
   };
 
@@ -1086,6 +1103,23 @@ export default function AdminDashboard() {
                     placeholder="https://..."
                   />
                 </div>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  onClick={handleGenerateAllLegal}
+                  isLoading={isGeneratingAllLegal}
+                  variant="secondary"
+                  className="w-full h-10 border-accent-peach/30 hover:border-accent-peach/60 text-accent-peach-darker text-xs"
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  {language === 'he' ? 'חולל את כל המסמכים בבת אחת (עברית ואנגלית)' : 'Generate All Documents at Once (Hebrew & English)'}
+                </Button>
+                <p className="text-[9px] text-center text-ink-400 mt-2 italic">
+                  {language === 'he' 
+                    ? '* פעולה זו חוסכת זמן וטוקנים על ידי יצירת כל 6 המסמכים בבקשה אחת.' 
+                    : '* This saves time and tokens by generating all 6 documents in a single request.'}
+                </p>
               </div>
             </div>
 

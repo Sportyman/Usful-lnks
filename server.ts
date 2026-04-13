@@ -445,6 +445,78 @@ Website URL: ${legalInfo.websiteUrl || 'N/A'}
   }
 });
 
+app.post("/api/gemini/generate-all-legal", async (req, res) => {
+  try {
+    const { legalInfo } = req.body;
+    
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+    
+    if (!apiKey || apiKey.length < 30) {
+      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const infoStr = legalInfo ? `
+Company/Owner Name: ${legalInfo.companyName || legalInfo.ownerName || 'N/A'}
+Email: ${legalInfo.email || 'N/A'}
+Address: ${legalInfo.address || 'N/A'}
+Website URL: ${legalInfo.websiteUrl || 'N/A'}
+` : '';
+
+    const prompt = `You are an expert legal advisor specializing in Israeli law and digital regulations.
+    Generate ALL required legal documents for a website named "DIGITAL.GIFTS" in both Hebrew and English.
+    The website is a discovery platform for digital tools, gifts, and affiliate deals.
+    
+    Documents needed:
+    1. Privacy Policy (Hebrew & English)
+    2. Terms of Use (Hebrew & English)
+    3. Accessibility Statement (Hebrew & English)
+    
+    ${infoStr ? `USE THE FOLLOWING INFORMATION TO FILL IN THE DOCUMENTS:
+    ${infoStr}` : 'Use appropriate legal terminology and include placeholders like [NAME], [EMAIL] where needed.'}
+    
+    CRITICAL: Use Markdown formatting for each document. 
+    - DO NOT MAKE THE ENTIRE CONTENT BOLD.
+    - Use headers, lists, and clear structure.
+    - Focus on Israeli law (Privacy Protection Law, Accessibility Law).
+    
+    Return the content in a JSON object with these exact keys:
+    "privacyPolicy_he", "privacyPolicy_en", "termsOfUse_he", "termsOfUse_en", "accessibility_he", "accessibility_en"`;
+
+    const response = await ai.models.generateContent({
+      model: PRIMARY_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            privacyPolicy_he: { type: Type.STRING },
+            privacyPolicy_en: { type: Type.STRING },
+            termsOfUse_he: { type: Type.STRING },
+            termsOfUse_en: { type: Type.STRING },
+            accessibility_he: { type: Type.STRING },
+            accessibility_en: { type: Type.STRING },
+          },
+          required: ["privacyPolicy_he", "privacyPolicy_en", "termsOfUse_he", "termsOfUse_en", "accessibility_he", "accessibility_en"],
+        },
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    
+    res.json(JSON.parse(text));
+  } catch (error: any) {
+    console.error("Server Gemini Bulk Legal Error:", error);
+    res.status(500).json({ error: error.message || "Failed to generate bulk legal content" });
+  }
+});
+
 // Vite middleware for development (only run when not deployed on serverless)
 if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
   import("vite").then(({ createServer: createViteServer }) => {
