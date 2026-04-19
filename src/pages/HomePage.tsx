@@ -11,7 +11,7 @@ import { useDataStore } from '../store/dataStore';
 import { useDebugStore } from '../store/debugStore';
 import { Button } from '../components/ui/Button';
 import { 
-  ExternalLink, Search, ArrowUpRight, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info
+  ExternalLink, Search, ArrowUpRight, Sparkles, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../utils/cn';
