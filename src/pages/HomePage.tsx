@@ -11,12 +11,13 @@ import { useDataStore } from '../store/dataStore';
 import { useDebugStore } from '../store/debugStore';
 import { Button } from '../components/ui/Button';
 import { 
-  ExternalLink, Search, ArrowUpRight, Sparkles, Zap, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2
+  ExternalLink, Search, ArrowUpRight, Sparkles, Zap, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { toast } from 'sonner';
 import { Link } from '../types';
+import { Modal } from '../components/ui/Modal';
 
 // --- Components ---
 
@@ -225,6 +226,7 @@ export default function HomePage() {
   const addLog = useDebugStore(state => state.addLog);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLink, setSelectedLink] = useState<Link | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Apply global styles
@@ -380,6 +382,10 @@ export default function HomePage() {
     const shareUrl = `${window.location.origin}/go/${slug}`;
     navigator.clipboard.writeText(shareUrl);
     toast.success(language === 'he' ? 'הקישור הועתק לשיתוף!' : 'Link copied for sharing!');
+  };
+
+  const handleLinkClick = (link: Link) => {
+    setSelectedLink(link);
   };
 
   // Colors for Bento Grid (cycling)
@@ -555,12 +561,10 @@ export default function HomePage() {
                   <DraggableMarquee key={newLinks.length}>
                     {(newLinks.length > 0 ? newLinks : Array(6).fill(null)).map((link, i) => (
                       link ? (
-                        <a 
+                        <div 
                           key={`${link.id}-${i}`}
-                          href={`/go/${link.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group relative block w-40 h-44 bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all shrink-0"
+                          onClick={() => handleLinkClick(link)}
+                          className="group relative block w-40 h-44 bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all shrink-0 cursor-pointer"
                           style={{ borderRadius: 'var(--global-radius, 24px)' }}
                           dir={isRTL ? 'rtl' : 'ltr'}
                         >
@@ -595,7 +599,7 @@ export default function HomePage() {
                               {categories.find(c => c.id === link.categoryId)?.[language === 'he' ? 'name_he' : 'name_en']}
                             </div>
                           </div>
-                        </a>
+                        </div>
                       ) : (
                         // Skeleton for empty state
                         <div key={i} className="w-40 h-44 bg-gray-100 border-2 border-black/10 rounded-2xl shrink-0 animate-pulse" />
@@ -740,15 +744,13 @@ export default function HomePage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {groupLinks.map((link, index) => (
-                          <motion.a
+                          <motion.div
                             key={link.id}
-                            href={`/go/${link.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            onClick={() => handleLinkClick(link)}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="group bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col h-full"
+                            className="group bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col h-full cursor-pointer"
                             style={{ borderRadius: 'var(--global-radius, 24px)' }}
                           >
                             <div className="h-40 overflow-hidden border-b-2 border-black relative bg-gray-100">
@@ -774,7 +776,7 @@ export default function HomePage() {
 
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                  <div className="bg-white text-black font-bold px-3 py-1 rounded-full border border-black transform -rotate-2 shadow-sm text-xs">
-                                   {language === 'he' ? 'בקר באתר' : 'VISIT'}
+                                   {language === 'he' ? 'פרטים נוספים' : 'MORE DETAILS'}
                                  </div>
                               </div>
                             </div>
@@ -813,7 +815,7 @@ export default function HomePage() {
                                 <ArrowUpRight className="w-4 h-4 text-black group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                               </div>
                             </div>
-                          </motion.a>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -836,6 +838,81 @@ export default function HomePage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Details Modal */}
+      <Modal
+        isOpen={!!selectedLink}
+        onClose={() => setSelectedLink(null)}
+        title={(language === 'he' ? selectedLink?.title_he : selectedLink?.title_en) || ''}
+      >
+        {selectedLink && (
+          <div className="space-y-6">
+            <div className="relative aspect-video rounded-2xl overflow-hidden border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] mb-8">
+              <img 
+                src={selectedLink.imageUrl || `https://picsum.photos/seed/${selectedLink.id}/1200/630`}
+                className="w-full h-full object-cover"
+                alt=""
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            </div>
+
+            <div className={cn(
+              "space-y-4",
+              selectedLink.textAlign === 'left' ? "text-left" : 
+              selectedLink.textAlign === 'center' ? "text-center" : 
+              "text-right"
+            )}>
+              <div className={cn(
+                "flex flex-wrap gap-2",
+                selectedLink.textAlign === 'center' ? "justify-center" : 
+                selectedLink.textAlign === 'left' ? "justify-start" : "justify-end"
+              )}>
+                {selectedLink.tags?.map(tag => (
+                  <span key={tag} className="text-[10px] font-black uppercase tracking-widest bg-black text-white px-3 py-1 rounded-full border-2 border-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              <h4 className="text-2xl font-black tracking-tight text-ink-900 border-b-4 border-primary inline-block pb-1">
+                {language === 'he' ? selectedLink.subtitle_he : selectedLink.subtitle_en}
+              </h4>
+
+              <div className="prose prose-sm max-w-none text-ink-600 leading-relaxed font-medium">
+                {language === 'he' ? selectedLink.description_he : selectedLink.description_en}
+              </div>
+            </div>
+
+            <div className="pt-8 flex flex-col gap-4">
+              <a
+                href={`/go/${selectedLink.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "w-full py-4 bg-[#22C55E] text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2",
+                  isRTL ? "flex-row-reverse" : ""
+                )}
+              >
+                <span>
+                  {selectedLink.actionButtonText === 'install' 
+                    ? (language === 'he' ? 'להתקנה' : 'INSTALL NOW')
+                    : (language === 'he' ? 'להמשך באתר' : 'CONTINUE TO SITE')}
+                </span>
+                <ExternalLink className="w-5 h-5" />
+              </a>
+              
+              <button
+                onClick={() => handleShare(selectedLink)}
+                className="w-full py-3 bg-white border-2 border-black text-black font-bold uppercase tracking-widest rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-50 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                {language === 'he' ? 'שיתוף קישור' : 'SHARE LINK'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Footer Decoration */}
       <div className="fixed bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FFD23F] via-[#FF6B6B] to-[#4ECDC4]" />

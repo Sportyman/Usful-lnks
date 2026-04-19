@@ -69,6 +69,7 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
     seoKeywords_he: initialData?.seoKeywords_he || '',
     seoKeywords_en: initialData?.seoKeywords_en || '',
     customSlug: initialData?.customSlug || '',
+    actionButtonText: initialData?.actionButtonText || 'continue',
     sourceContext: '',
   });
 
@@ -630,6 +631,26 @@ export function LinkForm({ categories, initialData, onSubmit, onCancel, isLoadin
                   )}
                 >
                   {align}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-ink-500 mb-2">
+              {language === 'he' ? 'טקסט כפתור פעולה' : 'Action Button Text'}
+            </label>
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+              {(['install', 'continue'] as const).map((text) => (
+                <button
+                  key={text}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, actionButtonText: text })}
+                  className={cn(
+                    "flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all",
+                    formData.actionButtonText === text ? "bg-white text-black shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  {text === 'install' ? (language === 'he' ? 'התקנה' : 'Install') : (language === 'he' ? 'המשך' : 'Continue')}
                 </button>
               ))}
             </div>

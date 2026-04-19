@@ -45,6 +45,7 @@ export interface Link {
   createdAt: any; // Firestore Timestamp
   isActive: boolean;
   clicks: number;
+  actionButtonText?: 'install' | 'continue';
   textAlign?: 'right' | 'left' | 'center';
   seoTitle_he?: string;
   seoTitle_en?: string;
