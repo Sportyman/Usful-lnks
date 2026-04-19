@@ -11,14 +11,13 @@ import { useDataStore } from '../store/dataStore';
 import { useDebugStore } from '../store/debugStore';
 import { Button } from '../components/ui/Button';
 import { 
-  ExternalLink, Search, ArrowUpRight, Sparkles, Zap, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info
+  ExternalLink, Search, ArrowUpRight, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { toast } from 'sonner';
 import { Link } from '../types';
 import { Modal } from '../components/ui/Modal';
-import { geminiService } from '../services/geminiService';
 import { useDebounce } from '../hooks/useDebounce';
 
 // --- Components ---
@@ -228,9 +227,7 @@ export default function HomePage() {
   const addLog = useDebugStore(state => state.addLog);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 600);
-  const [semanticLinkIds, setSemanticLinkIds] = useState<string[]>([]);
-  const [isSearchingAI, setIsSearchingAI] = useState(false);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -263,35 +260,14 @@ export default function HomePage() {
     addLog('debug', 'Language/RTL changed', { language, isRTL });
   }, [language, isRTL, addLog]);
 
-  useEffect(() => {
-    const performSemanticSearch = async () => {
-      if (!debouncedSearchQuery || debouncedSearchQuery.length < 3) {
-        setSemanticLinkIds([]);
-        return;
-      }
-
-      setIsSearchingAI(true);
-      try {
-        const results = await geminiService.semanticSearch(debouncedSearchQuery, links, language);
-        setSemanticLinkIds(results);
-      } catch (err) {
-        console.error('Semantic search failed:', err);
-      } finally {
-        setIsSearchingAI(false);
-      }
-    };
-
-    performSemanticSearch();
-  }, [debouncedSearchQuery, links, language]);
-
   const filteredLinks = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
+    const queryTerms = query.split(/\s+/).filter(Boolean);
     
-    // 1. Keyword Matches
-    const keywordResults = links.filter(link => {
+    return links.filter(link => {
       const matchesCategory = !selectedCategoryId || link.categoryId === selectedCategoryId;
       
-      if (!query) return matchesCategory;
+      if (!queryTerms.length) return matchesCategory;
 
       const title = (language === 'he' ? link.title_he : link.title_en) || '';
       const subtitle = (language === 'he' ? link.subtitle_he : link.subtitle_en) || '';
@@ -300,26 +276,28 @@ export default function HomePage() {
       const catName = categories.find(c => c.id === link.categoryId)?.[language === 'he' ? 'name_he' : 'name_en'] || '';
 
       const searchTarget = `${title} ${subtitle} ${description} ${tags} ${catName}`.toLowerCase();
-      return searchTarget.includes(query);
+      
+      // Smart Keyword Match: All terms must be present anywhere in the target
+      return matchesCategory && queryTerms.every(term => searchTarget.includes(term));
+    }).sort((a, b) => {
+      // Prioritize exact phrase matches in title
+      if (query) {
+        const aTitle = (language === 'he' ? a.title_he : a.title_en || '').toLowerCase();
+        const bTitle = (language === 'he' ? b.title_he : b.title_en || '').toLowerCase();
+        
+        const aTitleMatch = aTitle.includes(query);
+        const bTitleMatch = bTitle.includes(query);
+        
+        if (aTitleMatch && !bTitleMatch) return -1;
+        if (!aTitleMatch && bTitleMatch) return 1;
+      }
+      
+      // Secondary sort: Date descending
+      const dateA = a.createdAt?.seconds || 0;
+      const dateB = b.createdAt?.seconds || 0;
+      return dateB - dateA;
     });
-
-    // 2. Semantic Matches (IDs returned by Gemini)
-    const semanticResults = links.filter(link => 
-      semanticLinkIds.includes(link.id) && !keywordResults.some(kl => kl.id === link.id)
-    );
-
-    // Combine and sort
-    const combined = [...keywordResults, ...semanticResults];
-    
-    if (query) {
-      // If searching, keep them sorted by relevance (keywords first, then semantic)
-      // or just by date for now.
-      return combined;
-    }
-
-    // Sort by date descending for standard view
-    return combined.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-  }, [links, selectedCategoryId, searchQuery, language, categories, semanticLinkIds]);
+  }, [links, selectedCategoryId, searchQuery, language, categories]);
 
   // Group links by month/year for the category view
   const groupedLinks = useMemo(() => {
@@ -583,17 +561,12 @@ export default function HomePage() {
                 className="w-full px-6 py-3.5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-base font-bold placeholder:font-normal placeholder:text-gray-400 text-center"
               />
               <div className={cn(
-                "absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center transition-all",
-                isSearchingAI ? "bg-amber-400 animate-bounce" : "bg-primary"
+                "absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center transition-all bg-primary"
               )}>
-                {isSearchingAI ? (
-                  <Sparkles className="w-4 h-4 text-black animate-pulse" />
-                ) : (
-                  <Search className="w-4 h-4 text-black" />
-                )}
+                <Search className="w-4 h-4 text-black" />
               </div>
               
-              {/* AI Badge */}
+              {/* Intent Tag (Local Only) */}
               <AnimatePresence>
                 {searchQuery.length >= 3 && (
                   <motion.div
@@ -602,8 +575,7 @@ export default function HomePage() {
                     exit={{ opacity: 0, y: 10 }}
                     className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-ink-400"
                   >
-                    <Zap className={cn("w-3 h-3", isSearchingAI ? "text-amber-500 fill-amber-500 animate-pulse" : "text-gray-300")} />
-                    <span>{isSearchingAI ? (language === 'he' ? 'בינה מלאכותית מחפשת כוונה...' : 'AI searching intent...') : (language === 'he' ? 'חיפוש חכם מופעל' : 'Smart search enabled')}</span>
+                    <span>{language === 'he' ? 'חיפוש חכם פעיל על כל התוכן' : 'Smart search active on all content'}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -638,20 +610,11 @@ export default function HomePage() {
                     </p>
                   </div>
                 </div>
-                {isSearchingAI && (
-                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full animate-pulse">
-                    <Sparkles className="w-3 h-3 text-amber-500" />
-                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
-                      {language === 'he' ? 'מנתח כוונות...' : 'Analyzing intent...'}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {filteredLinks.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredLinks.map((link, index) => {
-                    const isSemantic = semanticLinkIds.includes(link.id);
                     return (
                       <motion.div
                         key={link.id}
@@ -662,12 +625,6 @@ export default function HomePage() {
                         className="group bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col h-full cursor-pointer relative"
                         style={{ borderRadius: 'var(--global-radius, 24px)' }}
                       >
-                        {isSemantic && (
-                          <div className="absolute top-3 left-3 z-10 bg-amber-400 border-2 border-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            <span className="text-[8px] font-black uppercase tracking-tighter">AI Match</span>
-                          </div>
-                        )}
                         <div className="h-48 overflow-hidden border-b-2 border-black relative bg-gray-50">
                           <img 
                             src={link.imageUrl || `https://picsum.photos/seed/${link.id}/600/400`}

@@ -194,55 +194,6 @@ app.get("/api/diagnostics/test-gemini", async (req, res) => {
   }
 });
 
-app.post("/api/gemini/semantic-search", async (req, res) => {
-  try {
-    const { query, links, language } = req.body;
-    
-    let apiKey = process.env.GEMINI_API_KEY;
-    if (process.env.NODE_ENV === 'production' && process.env.API_KEY) {
-      apiKey = process.env.API_KEY;
-    }
-    
-    if (!apiKey || apiKey.length < 30) {
-      return res.status(500).json({ error: "A valid API Key is not configured on the server." });
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
-
-    const prompt = `You are a semantic search assistant for a digital gifts discovery platform.
-    The user is searching for: "${query}" in ${language === 'he' ? 'Hebrew' : 'English'}.
-    
-    Analyze the list of links below and return a list of IDs for links that match the user's intent, even if the keywords don't match exactly.
-    For example, if they search for "translation", find "subtitles". If they search for "gaming", find "loot" or "codes".
-    
-    Links:
-    ${JSON.stringify(links)}
-    
-    Return ONLY a JSON array of link IDs that are highly relevant. Limit to top 8 results.
-    If no relevant links are found, return an empty array [].`;
-
-    const response = await ai.models.generateContent({
-      model: PRIMARY_MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: { type: Type.STRING }
-        }
-      },
-    });
-
-    const text = response.text;
-    if (!text) throw new Error("No response from AI");
-    
-    res.json(JSON.parse(text));
-  } catch (error: any) {
-    console.error("Server Gemini Semantic Search Error:", error);
-    res.status(500).json({ error: error.message || "Failed to perform semantic search" });
-  }
-});
-
 app.post("/api/gemini/generate-link-info", async (req, res) => {
   try {
     const { modelName, prompt, specificField } = req.body;
