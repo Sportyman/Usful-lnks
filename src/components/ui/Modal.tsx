@@ -14,7 +14,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -26,18 +26,18 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg bg-white rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col"
           >
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-xl font-serif italic text-ink-900">{title}</h3>
+            <div className="px-5 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <h3 className="text-lg sm:text-xl font-serif italic text-ink-900 truncate pr-2">{title}</h3>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors shrink-0"
               >
                 <X className="w-5 h-5 text-ink-500" />
               </button>
             </div>
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
+            <div className="p-5 sm:p-8 overflow-y-auto min-h-0 flex-1">
               {children}
             </div>
           </motion.div>

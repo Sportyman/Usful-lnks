@@ -41,8 +41,8 @@ export function TaskWindow({
           <div className={cn(
             "fixed z-[100] transition-all duration-500 ease-in-out",
             isMinimized 
-              ? "bottom-4 right-4 w-80 h-auto" 
-              : "inset-0 flex items-center justify-center p-4"
+              ? "bottom-4 right-4 left-4 sm:left-auto sm:w-80 h-auto" 
+              : "inset-0 flex items-center justify-center p-2 sm:p-4"
           )}>
             <motion.div
               layout
@@ -51,18 +51,18 @@ export function TaskWindow({
                 opacity: 1, 
                 scale: 1, 
                 y: 0,
-                borderRadius: isMinimized ? "1rem" : "2rem"
+                borderRadius: isMinimized ? "1rem" : "1.5rem sm:2rem"
               }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className={cn(
                 "bg-white shadow-2xl overflow-hidden flex flex-col transition-all duration-500",
-                isMinimized ? "rounded-2xl border border-slate-200" : "w-full max-w-lg rounded-[2rem] max-h-[85vh]"
+                isMinimized ? "rounded-2xl border border-slate-200" : "w-full max-w-lg rounded-[1.5rem] sm:rounded-[2rem] max-h-[90vh] sm:max-h-[85vh]"
               )}
             >
               {/* Header */}
               <div className={cn(
                 "flex items-center justify-between border-b border-slate-100 transition-all",
-                isMinimized ? "px-4 py-3 bg-slate-50" : "px-8 py-6"
+                isMinimized ? "px-4 py-3 bg-slate-50" : "px-4 sm:px-8 py-4 sm:py-6"
               )}>
                 <h3 className={cn(
                   "font-serif italic text-ink-900 truncate pr-2 transition-all",
@@ -104,7 +104,7 @@ export function TaskWindow({
               {/* Content */}
               <div className={cn(
                 "overflow-y-auto transition-all bg-white",
-                isMinimized ? "h-0 p-0" : "p-8 flex-1"
+                isMinimized ? "h-0 p-0" : "p-4 sm:p-8 flex-1"
               )}>
                 {children}
               </div>

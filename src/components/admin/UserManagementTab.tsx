@@ -110,8 +110,8 @@ export const UserManagementTab = () => {
           )}
         </AnimatePresence>
 
-        <div className="overflow-hidden border border-black/5 rounded-xl">
-          <table className="w-full text-sm text-left rtl:text-right">
+        <div className="overflow-x-auto border border-black/5 rounded-xl">
+          <table className="w-full text-sm text-left rtl:text-right min-w-[500px]">
             <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-widest text-ink-500 border-b border-black/5">
               <tr>
                 <th className="px-4 py-3">{language === 'he' ? 'משתמש' : 'User'}</th>

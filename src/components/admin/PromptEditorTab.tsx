@@ -72,8 +72,8 @@ export const PromptEditorTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto py-8 px-4">
-      <div className="bg-ink-50 border border-ink-200 p-6 rounded-3xl">
+    <div className="space-y-6 max-w-5xl mx-auto py-4 sm:py-8 px-2 sm:px-4">
+      <div className="bg-ink-50 border border-ink-200 p-4 sm:p-6 rounded-3xl">
         <div className="flex items-start gap-4">
           <div className="bg-white p-2 rounded-xl shadow-sm">
             <Sparkles className="w-6 h-6 text-brand-600" />
@@ -88,9 +88,9 @@ export const PromptEditorTab: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-6 sm:gap-8">
         {/* Model Selector */}
-        <div className="bg-white p-8 rounded-3xl border border-ink-100 shadow-sm">
+        <div className="bg-white p-5 sm:p-8 rounded-3xl border border-ink-100 shadow-sm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex-1">
               <h2 className="text-xl font-bold text-ink-900">Primary AI Model</h2>
@@ -113,7 +113,7 @@ export const PromptEditorTab: React.FC = () => {
         </div>
 
         {/* Links Prompt */}
-        <div className="bg-white p-8 rounded-3xl border border-ink-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 sm:p-8 rounded-3xl border border-ink-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <h2 className="text-xl font-bold text-ink-900">Link Generation Prompt</h2>
@@ -138,7 +138,7 @@ export const PromptEditorTab: React.FC = () => {
         </div>
 
         {/* Categories Prompt */}
-        <div className="bg-white p-8 rounded-3xl border border-ink-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white p-5 sm:p-8 rounded-3xl border border-ink-100 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <h2 className="text-xl font-bold text-ink-900">Category Generation Prompt</h2>

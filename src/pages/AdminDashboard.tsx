@@ -471,8 +471,8 @@ export default function AdminDashboard() {
       </header>
 
       {/* Mobile Tabs */}
-      <div className="px-4 py-4 overflow-x-auto hide-scrollbar sticky top-[57px] z-20 bg-bg-soft/95 backdrop-blur-sm">
-        <div className="flex gap-2 min-w-max">
+      <div className="px-4 py-2 overflow-x-auto hide-scrollbar sticky top-[53px] sm:top-[57px] z-20 bg-bg-soft/95 backdrop-blur-sm border-b border-black/5">
+        <div className="flex gap-2 min-w-max pb-2">
           {[
             { id: 'content', label: language === 'he' ? 'תוכן' : 'Content', icon: ExternalLink },
             { id: 'analytics', label: language === 'he' ? 'נתונים' : 'Analytics', icon: BarChart2 },
@@ -498,7 +498,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="px-4 space-y-6 max-w-3xl mx-auto">
+      <div className="px-2 sm:px-4 space-y-6 max-w-4xl mx-auto pb-10">
         {/* Content Tab */}
         {activeTab === 'content' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
