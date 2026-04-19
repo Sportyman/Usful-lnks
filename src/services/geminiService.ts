@@ -100,6 +100,34 @@ export const geminiService = {
     }
   },
 
+  async semanticSearch(query: string, links: any[], language: string) {
+    try {
+      const idToken = await getIdToken();
+      // Prepare a minimal version of links to save tokens
+      const linksSummary = links.map(l => ({
+        id: l.id,
+        title: language === 'he' ? l.title_he : l.title_en,
+        subtitle: language === 'he' ? l.subtitle_he : l.subtitle_en,
+        tags: l.tags || []
+      }));
+
+      const response = await fetch('/api/gemini/semantic-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+        },
+        body: JSON.stringify({ query, links: linksSummary, language })
+      });
+
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (error) {
+      console.error("Semantic search error:", error);
+      return [];
+    }
+  },
+
   async callGemini(modelName: string, prompt: string, specificField?: string) {
     const idToken = await getIdToken();
     const response = await fetch('/api/gemini/generate-link-info', {

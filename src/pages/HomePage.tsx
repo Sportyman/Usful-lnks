@@ -18,6 +18,8 @@ import { cn } from '../utils/cn';
 import { toast } from 'sonner';
 import { Link } from '../types';
 import { Modal } from '../components/ui/Modal';
+import { geminiService } from '../services/geminiService';
+import { useDebounce } from '../hooks/useDebounce';
 
 // --- Components ---
 
@@ -226,6 +228,9 @@ export default function HomePage() {
   const addLog = useDebugStore(state => state.addLog);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 600);
+  const [semanticLinkIds, setSemanticLinkIds] = useState<string[]>([]);
+  const [isSearchingAI, setIsSearchingAI] = useState(false);
   const [selectedLink, setSelectedLink] = useState<Link | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -258,17 +263,63 @@ export default function HomePage() {
     addLog('debug', 'Language/RTL changed', { language, isRTL });
   }, [language, isRTL, addLog]);
 
+  useEffect(() => {
+    const performSemanticSearch = async () => {
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 3) {
+        setSemanticLinkIds([]);
+        return;
+      }
+
+      setIsSearchingAI(true);
+      try {
+        const results = await geminiService.semanticSearch(debouncedSearchQuery, links, language);
+        setSemanticLinkIds(results);
+      } catch (err) {
+        console.error('Semantic search failed:', err);
+      } finally {
+        setIsSearchingAI(false);
+      }
+    };
+
+    performSemanticSearch();
+  }, [debouncedSearchQuery, links, language]);
+
   const filteredLinks = useMemo(() => {
-    const baseLinks = links.filter(link => {
+    const query = searchQuery.toLowerCase().trim();
+    
+    // 1. Keyword Matches
+    const keywordResults = links.filter(link => {
       const matchesCategory = !selectedCategoryId || link.categoryId === selectedCategoryId;
-      const title = language === 'he' ? link.title_he : link.title_en;
-      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+      
+      if (!query) return matchesCategory;
+
+      const title = (language === 'he' ? link.title_he : link.title_en) || '';
+      const subtitle = (language === 'he' ? link.subtitle_he : link.subtitle_en) || '';
+      const description = (language === 'he' ? link.description_he : link.description_en) || '';
+      const tags = (link.tags || []).join(' ');
+      const catName = categories.find(c => c.id === link.categoryId)?.[language === 'he' ? 'name_he' : 'name_en'] || '';
+
+      const searchTarget = `${title} ${subtitle} ${description} ${tags} ${catName}`.toLowerCase();
+      return searchTarget.includes(query);
     });
 
-    // Sort by date descending
-    return [...baseLinks].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-  }, [links, selectedCategoryId, searchQuery, language]);
+    // 2. Semantic Matches (IDs returned by Gemini)
+    const semanticResults = links.filter(link => 
+      semanticLinkIds.includes(link.id) && !keywordResults.some(kl => kl.id === link.id)
+    );
+
+    // Combine and sort
+    const combined = [...keywordResults, ...semanticResults];
+    
+    if (query) {
+      // If searching, keep them sorted by relevance (keywords first, then semantic)
+      // or just by date for now.
+      return combined;
+    }
+
+    // Sort by date descending for standard view
+    return combined.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  }, [links, selectedCategoryId, searchQuery, language, categories, semanticLinkIds]);
 
   // Group links by month/year for the category view
   const groupedLinks = useMemo(() => {
@@ -523,15 +574,39 @@ export default function HomePage() {
             transition={{ delay: 0.3 }}
             className="relative max-w-md mx-auto px-4"
           >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={language === 'he' ? 'חפש...' : 'Search...'}
-              className="w-full px-6 py-3.5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-base font-bold placeholder:font-normal placeholder:text-gray-400 text-center"
-            />
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 bg-primary rounded-full border-2 border-black flex items-center justify-center pointer-events-none">
-              <Search className="w-4 h-4 text-black" />
+            <div className="relative group">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={language === 'he' ? 'חפש כל דבר...' : 'Search for anything...'}
+                className="w-full px-6 py-3.5 bg-white border-2 border-black rounded-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:translate-y-[2px] focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-base font-bold placeholder:font-normal placeholder:text-gray-400 text-center"
+              />
+              <div className={cn(
+                "absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 border-black flex items-center justify-center transition-all",
+                isSearchingAI ? "bg-amber-400 animate-bounce" : "bg-primary"
+              )}>
+                {isSearchingAI ? (
+                  <Sparkles className="w-4 h-4 text-black animate-pulse" />
+                ) : (
+                  <Search className="w-4 h-4 text-black" />
+                )}
+              </div>
+              
+              {/* AI Badge */}
+              <AnimatePresence>
+                {searchQuery.length >= 3 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[9px] font-black uppercase tracking-tighter text-ink-400"
+                  >
+                    <Zap className={cn("w-3 h-3", isSearchingAI ? "text-amber-500 fill-amber-500 animate-pulse" : "text-gray-300")} />
+                    <span>{isSearchingAI ? (language === 'he' ? 'בינה מלאכותית מחפשת כוונה...' : 'AI searching intent...') : (language === 'he' ? 'חיפוש חכם מופעל' : 'Smart search enabled')}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         </div>
@@ -540,7 +615,115 @@ export default function HomePage() {
       {/* --- CONTENT AREA --- */}
       <div className="container mx-auto px-4 max-w-6xl">
         <AnimatePresence mode="wait">
-          {!selectedCategoryId ? (
+          {searchQuery.trim() ? (
+            /* SEARCH RESULTS VIEW */
+            <motion.div
+              key="search-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="pb-20"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary border-2 border-black p-2 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <Search className="w-5 h-5 text-black" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black uppercase tracking-tight leading-none">
+                      {language === 'he' ? 'תוצאות חיפוש' : 'Search Results'}
+                    </h2>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                      {filteredLinks.length} {language === 'he' ? 'פריטים נמצאו' : 'Items Found'}
+                    </p>
+                  </div>
+                </div>
+                {isSearchingAI && (
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full animate-pulse">
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
+                      {language === 'he' ? 'מנתח כוונות...' : 'Analyzing intent...'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {filteredLinks.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredLinks.map((link, index) => {
+                    const isSemantic = semanticLinkIds.includes(link.id);
+                    return (
+                      <motion.div
+                        key={link.id}
+                        onClick={() => handleLinkClick(link)}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="group bg-white border-2 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex flex-col h-full cursor-pointer relative"
+                        style={{ borderRadius: 'var(--global-radius, 24px)' }}
+                      >
+                        {isSemantic && (
+                          <div className="absolute top-3 left-3 z-10 bg-amber-400 border-2 border-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            <span className="text-[8px] font-black uppercase tracking-tighter">AI Match</span>
+                          </div>
+                        )}
+                        <div className="h-48 overflow-hidden border-b-2 border-black relative bg-gray-50">
+                          <img 
+                            src={link.imageUrl || `https://picsum.photos/seed/${link.id}/600/400`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            alt=""
+                          />
+                        </div>
+                        <div className="p-5 flex flex-col flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                             <div className="bg-black text-white px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest">
+                                {categories.find(c => c.id === link.categoryId)?.[language === 'he' ? 'name_he' : 'name_en']}
+                             </div>
+                          </div>
+                          <h3 className="font-black text-lg leading-tight mb-2 group-hover:text-primary-dark transition-colors">
+                            {language === 'he' ? link.title_he : link.title_en}
+                          </h3>
+                          <p className="text-xs font-bold text-ink-400 line-clamp-1 mb-2">
+                            {language === 'he' ? link.subtitle_he : link.subtitle_en}
+                          </p>
+                          <p className="text-[11px] text-gray-500 line-clamp-2 mb-4 flex-1">
+                            {language === 'he' ? link.description_he : link.description_en}
+                          </p>
+                          <div className="flex items-center justify-between pt-4 border-t border-black/5">
+                             <span className="text-[10px] font-bold text-gray-400">
+                               {language === 'he' ? 'גלה עכשיו' : 'Discover Now'}
+                             </span>
+                             <ArrowUpRight className="w-5 h-5 text-black group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-20 text-center">
+                  <div className="inline-block p-6 bg-white border-2 border-black rounded-3xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-6">
+                    <Search className="w-12 h-12 text-black opacity-20" />
+                  </div>
+                  <h3 className="text-2xl font-black uppercase mb-2">
+                    {language === 'he' ? 'לא מצאנו כלום...' : 'No results found...'}
+                  </h3>
+                  <p className="text-gray-500 font-medium max-w-sm mx-auto">
+                    {language === 'he' 
+                      ? 'נסה לחפש במילים אחרות, או שהבינה המלאכותית שלנו עוד לא מכירה את זה.' 
+                      : 'Try different keywords, or maybe our AI hasn\'t discovered this yet.'}
+                  </p>
+                  <Button 
+                    className="mt-8"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    {language === 'he' ? 'נקה חיפוש' : 'Clear Search'}
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+          ) : !selectedCategoryId ? (
             <motion.div
               key="dashboard"
               initial={{ opacity: 0 }}
