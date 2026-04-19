@@ -555,49 +555,127 @@ export default function AdminDashboard() {
                 </Button>
               </div>
 
-              <div className="grid gap-3">
-                {links.map(link => (
-                  <div key={link.id} className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm flex gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden">
-                      <img 
-                        src={link.imageUrl || `https://picsum.photos/seed/${link.id}/100/100`} 
-                        className="w-full h-full object-cover opacity-80"
-                        alt={language === 'he' ? link.title_he : link.title_en}
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-bold text-ink-900 truncate pr-2">{language === 'he' ? link.title_he : link.title_en}</h3>
-                          <div className="flex items-center gap-2 text-[10px] text-ink-400 mt-0.5">
-                            <span className="bg-gray-100 px-1.5 py-0.5 rounded-md font-medium">
-                              {categories.find(c => c.id === link.categoryId)?.[language === 'he' ? 'name_he' : 'name_en']}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <BarChart2 className="w-3 h-3" />
-                              {link.clicks}
-                            </span>
+              <div className="space-y-8">
+                {/* Categories with Links */}
+                {categories.map(cat => {
+                  const catLinks = links.filter(l => l.categoryId === cat.id);
+                  if (catLinks.length === 0) return null;
+                  
+                  return (
+                    <div key={cat.id} className="space-y-3">
+                      <div className="flex items-center gap-3 px-1">
+                        <div className="w-1 h-4 bg-secondary rounded-full" />
+                        <h3 className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.2em]">
+                          {language === 'he' ? cat.name_he : cat.name_en}
+                        </h3>
+                        <div className="h-px flex-1 bg-black/5" />
+                      </div>
+                      
+                      <div className="grid gap-3">
+                        {catLinks.map(link => (
+                          <div key={link.id} className="bg-white p-3 sm:p-4 rounded-2xl border border-black/5 shadow-sm flex items-center gap-3 sm:gap-4 group max-w-full overflow-hidden">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden">
+                              <img 
+                                src={link.imageUrl || `https://picsum.photos/seed/${link.id}/100/100`} 
+                                className="w-full h-full object-cover opacity-80"
+                                alt={language === 'he' ? link.title_he : link.title_en}
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="font-bold text-sm sm:text-base text-ink-900 truncate">
+                                    {language === 'he' ? link.title_he : link.title_en}
+                                  </h3>
+                                  <div className="flex items-center gap-2 text-[10px] text-ink-400 mt-0.5 truncate">
+                                    <span className="bg-gray-50 px-1.5 py-0.5 rounded-md font-medium shrink-0">
+                                      {cat[language === 'he' ? 'name_he' : 'name_en']}
+                                    </span>
+                                    <span className="flex items-center gap-1 shrink-0">
+                                      <BarChart2 className="w-3 h-3" />
+                                      {link.clicks}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                  <button 
+                                    onClick={() => setLinkModal({ isOpen: true, editing: link })}
+                                    className="p-1.5 sm:p-2 rounded-xl hover:bg-gray-100 text-ink-500 transition-colors"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => setDeleteConfirm({ isOpen: true, type: 'link', id: link.id })}
+                                    className="p-1.5 sm:p-2 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <button 
-                            onClick={() => setLinkModal({ isOpen: true, editing: link })}
-                            className="p-2 rounded-xl hover:bg-gray-100 text-ink-500 transition-colors"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => setDeleteConfirm({ isOpen: true, type: 'link', id: link.id })}
-                            className="p-2 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        ))}
                       </div>
                     </div>
+                  );
+                })}
+
+                {/* Uncategorized Links */}
+                {links.filter(l => !l.categoryId || !categories.some(c => c.id === l.categoryId)).length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 px-1">
+                      <div className="w-1 h-4 bg-gray-300 rounded-full" />
+                      <h3 className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.2em]">
+                        {language === 'he' ? 'ללא קטגוריה' : 'Uncategorized'}
+                      </h3>
+                      <div className="h-px flex-1 bg-black/5" />
+                    </div>
+                    <div className="grid gap-3">
+                      {links.filter(l => !l.categoryId || !categories.some(c => c.id === l.categoryId)).map(link => (
+                        <div key={link.id} className="bg-white p-3 sm:p-4 rounded-2xl border border-black/5 shadow-sm flex items-center gap-3 sm:gap-4 group max-w-full overflow-hidden">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden">
+                            <img 
+                              src={link.imageUrl || `https://picsum.photos/seed/${link.id}/100/100`} 
+                              className="w-full h-full object-cover opacity-80"
+                              alt={language === 'he' ? link.title_he : link.title_en}
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-sm sm:text-base text-ink-900 truncate">
+                                  {language === 'he' ? link.title_he : link.title_en}
+                                </h3>
+                                <div className="flex items-center gap-2 text-[10px] text-ink-400 mt-0.5 truncate">
+                                  <span className="flex items-center gap-1">
+                                    <BarChart2 className="w-3 h-3" />
+                                    {link.clicks}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex gap-1 shrink-0">
+                                <button 
+                                  onClick={() => setLinkModal({ isOpen: true, editing: link })}
+                                  className="p-1.5 sm:p-2 rounded-xl hover:bg-gray-100 text-ink-500 transition-colors"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => setDeleteConfirm({ isOpen: true, type: 'link', id: link.id })}
+                                  className="p-1.5 sm:p-2 rounded-xl hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             </section>
           </div>
