@@ -454,9 +454,9 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-bg-soft pb-20">
+    <div className="min-h-screen bg-bg-soft pb-20 w-full overflow-x-hidden">
       {/* Mobile-First Header */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-black/5 px-4 py-3 flex items-center justify-between">
+      <header className="w-full sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-black/5 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-black/5 transition-colors">
             {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
@@ -471,7 +471,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Mobile Tabs */}
-      <div className="px-4 py-2 overflow-x-auto hide-scrollbar sticky top-[53px] sm:top-[57px] z-20 bg-bg-soft/95 backdrop-blur-sm border-b border-black/5">
+      <div className="w-full px-4 py-2 overflow-x-auto hide-scrollbar sticky top-[53px] sm:top-[57px] z-20 bg-bg-soft/95 backdrop-blur-sm border-b border-black/5">
         <div className="flex gap-2 min-w-max pb-2">
           {[
             { id: 'content', label: language === 'he' ? 'תוכן' : 'Content', icon: ExternalLink },
@@ -498,7 +498,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="px-2 sm:px-4 space-y-6 max-w-4xl mx-auto pb-10">
+      <div className="w-full px-2 sm:px-4 space-y-6 max-w-4xl mx-auto pb-10">
         {/* Content Tab */}
         {activeTab === 'content' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">

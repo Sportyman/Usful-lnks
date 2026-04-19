@@ -34,8 +34,11 @@
 }
 
 @layer base {
+  html, body {
+    @apply antialiased bg-[#F2F2F2] text-ink-900 selection:bg-black selection:text-white overflow-x-hidden max-w-full;
+  }
+  
   body {
-    @apply antialiased bg-[#F2F2F2] text-ink-900 selection:bg-black selection:text-white overflow-x-hidden;
     /* Subtle grid pattern */
     background-image: linear-gradient(#e5e5e5 1px, transparent 1px), linear-gradient(90deg, #e5e5e5 1px, transparent 1px);
     background-size: 40px 40px;

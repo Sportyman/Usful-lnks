@@ -45,8 +45,8 @@ export function RootLayout() {
       <ClarityTracker />
       <CookieBanner />
       {/* Floating Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6 pointer-events-none">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between pointer-events-auto">
+      <header className="fixed top-0 inset-x-0 z-50 px-4 pt-4 sm:px-6 sm:pt-6 pointer-events-none">
+        <div className="w-full max-w-screen-2xl mx-auto flex items-center justify-between pointer-events-auto">
           <Link to="/" className="group relative">
             <div className="absolute inset-0 bg-white/50 blur-xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative flex items-center gap-2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm border border-white/50 transition-transform group-hover:scale-105">
@@ -74,13 +74,15 @@ export function RootLayout() {
         </div>
       </header>
       
-      <main className="pt-20 sm:pt-24 pb-12 flex-1 w-full max-w-screen-2xl mx-auto">
-        <Outlet />
+      <main className="pt-20 sm:pt-24 pb-12 flex-1 w-full max-w-full overflow-x-hidden">
+        <div className="max-w-screen-2xl mx-auto">
+          <Outlet />
+        </div>
       </main>
 
       {/* Minimal Footer */}
       <div className="w-full">
-        <div className="max-w-screen-2xl mx-auto px-6 pb-6 flex justify-center">
+        <div className="w-full max-w-screen-2xl mx-auto px-6 pb-6 flex justify-center overflow-x-hidden">
            <Footer />
         </div>
       </div>

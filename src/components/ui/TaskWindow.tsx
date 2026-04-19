@@ -42,7 +42,7 @@ export function TaskWindow({
             "fixed z-[100] transition-all duration-500 ease-in-out",
             isMinimized 
               ? "bottom-4 right-4 left-4 sm:left-auto sm:w-80 h-auto" 
-              : "inset-0 flex items-center justify-center p-2 sm:p-4"
+              : "inset-0 grid place-items-center p-2 sm:p-4 overflow-y-auto"
           )}>
             <motion.div
               layout
