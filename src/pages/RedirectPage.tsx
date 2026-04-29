@@ -57,39 +57,14 @@ export default function RedirectPage() {
         setTargetUrl(decodedUrl);
         addLog('info', 'RedirectPage: Starting redirection', { linkId: link.id, targetUrl: decodedUrl });
 
-        // 1. Fetch Affiliate URL & Settings
-        const settings = await settingsService.getGlobalSettings();
+        // 1. Fetch Affiliate URL & Settings (Legacy logic removed for safety)
+        // We no longer trigger hidden frames to comply with Chrome Safe Browsing
         
-        // 2. Trigger Affiliate Frame (Hidden Cookie Drop)
-        // This runs in the background while the user sees the loading screen
-        const triggerAffiliate = async () => {
-          if (!settings.affiliateUrl) return;
-          
-          try {
-            addLog('debug', 'RedirectPage: Triggering hidden affiliate frame', { affiliateUrl: settings.affiliateUrl });
-            const affiliateFrame = document.createElement('iframe');
-            affiliateFrame.style.display = 'none';
-            affiliateFrame.src = settings.affiliateUrl;
-            document.body.appendChild(affiliateFrame);
-            
-            // Cleanup the frame after a few seconds
-            setTimeout(() => {
-              if (document.body.contains(affiliateFrame)) {
-                document.body.removeChild(affiliateFrame);
-              }
-            }, REDIRECT_DELAY_MS + 3000);
-          } catch (err) {
-            addLog('error', 'RedirectPage: Failed to trigger hidden affiliate', { error: err });
-          }
-        };
-        
-        triggerAffiliate();
-
-        // 3. Analytics & Firestore Increment
+        // 2. Analytics & Firestore Increment
         linkService.incrementClicks(link.id);
         analyticsService.logLinkClick(link.id, 'Redirecting...');
 
-        // 4. Final Redirect to the ACTUAL target URL (X)
+        // 3. Final Redirect to the ACTUAL target URL (X)
         timer = setTimeout(() => {
           addLog('info', 'RedirectPage: Final redirecting to target', { url: decodedUrl });
           

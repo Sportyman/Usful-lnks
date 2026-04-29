@@ -11,13 +11,14 @@ import { useDataStore } from '../store/dataStore';
 import { useDebugStore } from '../store/debugStore';
 import { Button } from '../components/ui/Button';
 import { 
-  ExternalLink, Search, ArrowUpRight, Sparkles, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info
+  ExternalLink, Search, ArrowUpRight, Sparkles, Flame, ArrowLeft, ArrowRight, X, LayoutGrid, Share2, Info, ShieldCheck
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { toast } from 'sonner';
 import { Link } from '../types';
 import { Modal } from '../components/ui/Modal';
+import { searchLinks } from '../utils/searchUtils';
 import { useDebounce } from '../hooks/useDebounce';
 
 // --- Components ---
@@ -261,42 +262,18 @@ export default function HomePage() {
   }, [language, isRTL, addLog]);
 
   const filteredLinks = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    const queryTerms = query.split(/\s+/).filter(Boolean);
-    
-    return links.filter(link => {
-      const matchesCategory = !selectedCategoryId || link.categoryId === selectedCategoryId;
-      
-      if (!queryTerms.length) return matchesCategory;
+    // 1. Initial Filtering by Category (Static)
+    const categoryLinks = selectedCategoryId 
+      ? links.filter(l => l.categoryId === selectedCategoryId)
+      : links;
 
-      const title = (language === 'he' ? link.title_he : link.title_en) || '';
-      const subtitle = (language === 'he' ? link.subtitle_he : link.subtitle_en) || '';
-      const description = (language === 'he' ? link.description_he : link.description_en) || '';
-      const tags = (link.tags || []).join(' ');
-      const catName = categories.find(c => c.id === link.categoryId)?.[language === 'he' ? 'name_he' : 'name_en'] || '';
+    // 2. Perform Intelligent Search
+    if (!searchQuery.trim()) {
+      // If no query, just sort by date
+      return categoryLinks.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    }
 
-      const searchTarget = `${title} ${subtitle} ${description} ${tags} ${catName}`.toLowerCase();
-      
-      // Smart Keyword Match: All terms must be present anywhere in the target
-      return matchesCategory && queryTerms.every(term => searchTarget.includes(term));
-    }).sort((a, b) => {
-      // Prioritize exact phrase matches in title
-      if (query) {
-        const aTitle = (language === 'he' ? a.title_he : a.title_en || '').toLowerCase();
-        const bTitle = (language === 'he' ? b.title_he : b.title_en || '').toLowerCase();
-        
-        const aTitleMatch = aTitle.includes(query);
-        const bTitleMatch = bTitle.includes(query);
-        
-        if (aTitleMatch && !bTitleMatch) return -1;
-        if (!aTitleMatch && bTitleMatch) return 1;
-      }
-      
-      // Secondary sort: Date descending
-      const dateA = a.createdAt?.seconds || 0;
-      const dateB = b.createdAt?.seconds || 0;
-      return dateB - dateA;
-    });
+    return searchLinks(categoryLinks, categories, searchQuery, language);
   }, [links, selectedCategoryId, searchQuery, language, categories]);
 
   // Group links by month/year for the category view
@@ -1053,6 +1030,83 @@ export default function HomePage() {
           </div>
         )}
       </Modal>
+
+      {/* --- FOOTER SECTION --- */}
+      <footer className="bg-white border-t-4 border-black pt-16 pb-20 relative overflow-hidden">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            <div>
+              <h3 className="text-2xl font-black mb-4">
+                DIGITAL<span className="text-[#FF6B6B]">.</span>GIFTS
+              </h3>
+              <p className="text-gray-500 font-medium text-sm leading-relaxed max-w-xs">
+                {language === 'he' 
+                  ? 'הפורטל המוביל לגילוי כלים דיגיטליים, מתנות ומשאבים איכותיים.' 
+                  : 'The leading discovery platform for digital tools, gifts, and quality resources.'}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-black uppercase text-xs tracking-widest text-[#F27D26] mb-6">Explore</h4>
+                <ul className="space-y-3 font-bold text-sm">
+                  {categories.slice(0, 4).map(cat => (
+                    <li key={cat.id}>
+                      <button onClick={() => handleCategoryClick(cat.id)} className="hover:text-[#FF6B6B] transition-colors uppercase">
+                        {language === 'he' ? cat.name_he : cat.name_en}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-black uppercase text-xs tracking-widest text-[#F27D26] mb-6">Legal</h4>
+                <ul className="space-y-3 font-bold text-sm">
+                  <li>
+                    <a href="/legal/privacy" className="hover:text-[#FF6B6B] transition-colors uppercase">
+                      {language === 'he' ? 'פרטיות' : 'Privacy Policy'}
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/legal/terms" className="hover:text-[#FF6B6B] transition-colors uppercase">
+                      {language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/legal/accessibility" className="hover:text-[#FF6B6B] transition-colors uppercase">
+                      {language === 'he' ? 'נגישות' : 'Accessibility'}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-between items-start md:items-end">
+              <div className="bg-gray-50 border-2 border-black p-4 rounded-2xl max-w-xs">
+                 <div className="flex items-center gap-2 mb-2">
+                   <ShieldCheck className="w-4 h-4 text-green-500" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Safe Discovery</span>
+                 </div>
+                 <p className="text-[10px] font-bold text-gray-400">
+                   {language === 'he' 
+                     ? 'כל הקישורים נבדקים ידנית על ידי הצוות שלנו להבטחת חוויית גלישה בטוחה ואיכותית.' 
+                     : 'All links are manually verified by our team to ensure a safe and high-quality browsing experience.'}
+                 </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-8 border-t-2 border-dashed border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              © 2026 DIGITAL.GIFTS. BRINGING THE WEB TO YOUR FINGERTIPS.
+            </p>
+            <div className="flex gap-4">
+               {/* Site Version/Admin Access hidden link in footer */}
+               <a href="/login" className="text-[10px] font-bold text-gray-200 hover:text-gray-400 transition-colors">v2.4.0</a>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Footer Decoration */}
       <div className="fixed bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FFD23F] via-[#FF6B6B] to-[#4ECDC4]" />
