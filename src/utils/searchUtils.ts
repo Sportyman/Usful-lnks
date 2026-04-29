@@ -1,36 +1,40 @@
+import Fuse from 'fuse.js';
 import { Link, Category } from '../types';
 
 /**
- * Local synonym map to help with intent matching without AI cost.
+ * Enhanced Synonym Map for Hebrew/English Intent Matching
  */
 const SYNONYM_MAP: Record<string, string[]> = {
   // Entertainment & Translation
-  'תרגום': ['כתוביות', 'כתובית', 'מתורגם', 'דובב', 'תירגום', 'subtitles', 'translation', 'subs'],
-  'כתוביות': ['כתובית', 'תרגום', 'מתורגם', 'סאב', 'subs', 'subtitles', 'תירגום'],
-  'כתובית': ['כתוביות', 'תרגום', 'מתורגם', 'subtitles'],
-  'סרטים': ['סרט', 'סינמה', 'קולנוע', 'movies', 'cinema', 'צפייה'],
-  'סדרות': ['סדרה', 'טלויזיה', 'series', 'tv', 'וידאו'],
+  'תרגום': ['כתוביות', 'כתובית', 'מתורגם', 'דובב', 'תירגום', 'subtitles', 'translation', 'subs', 'סאבים'],
+  'כתוביות': ['כתובית', 'תרגום', 'מתורגם', 'סאב', 'subs', 'subtitles', 'תירגום', 'סאבים'],
+  'כתובית': ['כתוביות', 'תרגום', 'מתורגם', 'subtitles', 'סאבים'],
+  'סרטים': ['סרט', 'סינמה', 'קולנוע', 'movies', 'cinema', 'צפייה', 'ישיר'],
+  'סדרות': ['סדרה', 'טלויזיה', 'series', 'tv', 'וידאו', 'פרקים'],
   
   // Gaming
-  'משחקים': ['משחק', 'גיימינג', 'קודים', 'loot', 'gaming', 'games', 'play'],
-  'קודים': ['מתנה', 'בונוס', 'loot', 'codes', 'promo', 'redeem'],
-  'זהב': ['מטבעות', 'כסף', 'gold', 'coins', 'money'],
+  'משחקים': ['משחק', 'גיימינג', 'קודים', 'loot', 'gaming', 'games', 'play', 'לשחק'],
+  'קודים': ['מתנה', 'בונוס', 'loot', 'codes', 'promo', 'redeem', 'צ׳יטים'],
+  'זהב': ['מטבעות', 'כסף', 'gold', 'coins', 'money', 'יהלומים'],
   
   // Shopping / Tech
-  'כלים': ['תוכנה', 'אפליקציה', 'tools', 'apps', 'software'],
-  'קופונים': ['הנחה', 'מבצע', 'coupons', 'discount', 'deals', 'sale'],
-  'חינם': ['מתנה', 'בחינם', 'free', 'gift', 'zero'],
+  'כלים': ['תוכנה', 'אפליקציה', 'tools', 'apps', 'software', 'עזרים'],
+  'קופונים': ['הנחה', 'מבצע', 'coupons', 'discount', 'deals', 'sale', 'הטבות'],
+  'חינם': ['מתנה', 'בחינם', 'free', 'gift', 'zero', 'ללא עלות'],
 };
 
 /**
- * Strips common Hebrew prefixes that might hinder simple keyword matching.
+ * Basic Hebrew Stemmer/Normalizer to handle prefixes and common suffixes.
  */
 const normalizeHebrew = (text: string) => {
   if (!text) return '';
-  // Remove common prefix letters if they are followed by at least 3 letters 
-  // (to avoid stripping roots like 'בית')
   return text.toLowerCase().trim()
-    .replace(/^[הובכלמש]([א-ת]{3,})/g, '$1'); 
+    // Remove common prefixes if word is long enough
+    .replace(/^[הובכלמש]([א-ת]{3,})/g, '$1')
+    // Handle some common suffixes for plurality/gender
+    .replace(/([א-ת]{2,})ות$/g, '$1')
+    .replace(/([א-ת]{2,})ים$/g, '$1')
+    .replace(/([א-ת]{2,})ית$/g, '$1');
 };
 
 export const searchLinks = (
@@ -44,80 +48,84 @@ export const searchLinks = (
 
   const queryTerms = trimmedQuery.split(/\s+/).filter(Boolean);
   
-  // 1. Create match groups for each query term
-  const matchGroups = queryTerms.map(term => {
-    const group = new Set<string>();
-    group.add(term);
+  // 1. Expand query with synonyms and roots
+  const expandedTerms = new Set<string>();
+  queryTerms.forEach(term => {
+    expandedTerms.add(term);
     
-    // Add normalized version
+    // Add root normalization
     const normalized = normalizeHebrew(term);
-    if (normalized !== term) group.add(normalized);
+    if (normalized !== term) expandedTerms.add(normalized);
     
     // Add synonyms
     if (SYNONYM_MAP[term]) {
-      SYNONYM_MAP[term].forEach(s => group.add(s));
-    }
-    
-    // Check if term is a prefix of any synonym or vice versa
-    Object.keys(SYNONYM_MAP).forEach(key => {
-      if (key.includes(term) || term.includes(key)) {
-        group.add(key);
-        SYNONYM_MAP[key].forEach(s => group.add(s));
-      }
-    });
-
-    return Array.from(group);
-  });
-
-  // 2. Perform search with scoring
-  const scoredLinks = links.map(link => {
-    const category = categories.find(c => c.id === link.categoryId);
-    const catHe = category?.name_he?.toLowerCase() || '';
-    const catEn = category?.name_en?.toLowerCase() || '';
-    
-    const titleHe = link.title_he?.toLowerCase() || '';
-    const titleEn = link.title_en?.toLowerCase() || '';
-    const subHe = link.subtitle_he?.toLowerCase() || '';
-    const subEn = link.subtitle_en?.toLowerCase() || '';
-    const descHe = link.description_he?.toLowerCase() || '';
-    const descEn = link.description_en?.toLowerCase() || '';
-    const tags = (link.tags || []).map(t => t.toLowerCase());
-
-    const fullContent = [titleHe, titleEn, subHe, subEn, descHe, descEn, ...tags, catHe, catEn].join(' ');
-
-    let score = 0;
-    let matchesAllGroups = true;
-
-    for (const group of matchGroups) {
-      const groupMatch = group.some(term => fullContent.includes(term));
-      
-      if (!groupMatch) {
-        matchesAllGroups = false;
-        break;
-      }
-
-      // Scoring logic for sorting
-      group.forEach(term => {
-        if (titleHe.includes(term) || titleEn.includes(term)) score += 50;
-        if (tags.some(t => t.includes(term))) score += 30;
-        if (subHe.includes(term) || subEn.includes(term)) score += 20;
-        if (descHe.includes(term) || descEn.includes(term)) score += 10;
-        
-        // Exact match bonus
-        if (titleHe === term || titleEn === term) score += 100;
+      SYNONYM_MAP[term].forEach(s => {
+        expandedTerms.add(s);
+        const normS = normalizeHebrew(s);
+        if (normS !== s) expandedTerms.add(normS);
       });
     }
-
-    return { link, score, matchesAllGroups };
   });
 
-  // 3. Filter and Sort
-  return scoredLinks
-    .filter(sl => sl.matchesAllGroups)
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      // Tie breaker: Date desc
-      return (b.link.createdAt?.seconds || 0) - (a.link.createdAt?.seconds || 0);
-    })
-    .map(sl => sl.link);
+  const finalSearchQuery = Array.from(expandedTerms).join(' ');
+
+  // 2. Prepare data for Fuse.js
+  const searchData = links.map(link => {
+    const category = categories.find(c => c.id === link.categoryId);
+    const catName = category ? (language === 'he' ? category.name_he : category.name_en) : '';
+    
+    return {
+      ...link,
+      categoryName: catName,
+      // Aggregated text field for broad matching
+      compositeText: [
+        link.title_he, link.title_en,
+        link.subtitle_he, link.subtitle_en,
+        link.description_he, link.description_en,
+        ...(link.tags || []),
+        catName
+      ].filter(Boolean).join(' ')
+    };
+  });
+
+  // 3. Configure Fuse.js for balanced fuzzy matching
+  const fuse = new Fuse(searchData, {
+    keys: [
+      { name: 'title_he', weight: 3 },
+      { name: 'title_en', weight: 3 },
+      { name: 'tags', weight: 2 },
+      { name: 'subtitle_he', weight: 1.5 },
+      { name: 'categoryName', weight: 1 },
+      { name: 'compositeText', weight: 0.5 }
+    ],
+    threshold: 0.4, // Balanced: not too strict, not too loose
+    location: 0,
+    distance: 100,
+    minMatchCharLength: 2,
+    shouldSort: true,
+    includeScore: true,
+    findAllMatches: true,
+    useExtendedSearch: true, // Allows for complex query symbols if needed
+  });
+
+  // 4. Perform search
+  const results = fuse.search(finalSearchQuery);
+  
+  // If we have results, return them. If not, revert to a more basic simple-match as fallback
+  if (results.length > 0) {
+    return results.map(r => r.item);
+  }
+
+  // Fallback: Simple keyword match (AND logic)
+  return links.filter(link => {
+    const searchTarget = [
+      link.title_he, link.title_en, link.subtitle_he, link.subtitle_en, 
+      link.description_he, link.description_en, ...(link.tags || [])
+    ].join(' ').toLowerCase();
+    
+    return queryTerms.every(term => 
+      searchTarget.includes(term.toLowerCase()) || 
+      searchTarget.includes(normalizeHebrew(term))
+    );
+  });
 };
